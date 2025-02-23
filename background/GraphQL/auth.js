@@ -30,7 +30,7 @@ export default class Auth {
 
   // Logout user, remove user data in the storage
   static async logout() {
-    return Promise.all([
+    await Promise.all([
       Storage.remove(Storage.DATA.ACCESS_TOKEN),
       Storage.remove(Storage.DATA.USER),
     ]);
