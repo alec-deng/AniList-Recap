@@ -2,9 +2,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedType = "ANIME"; // Default to ANIME
 
   // Get UI elements
+  const loginButton = document.getElementById("loginButton");
   const animeButton = document.getElementById("animeButton");
   const mangaButton = document.getElementById("mangaButton");
   const fetchButton = document.getElementById("fetchData");
+
+  loginButton.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "LOGIN" }, (response) => {
+      if (response.error) {
+        console.error("Error:", response.error);
+      } else {
+        console.log("Received Data:", response);
+        output.textContent = JSON.stringify(response, null, 2);
+      }
+    });
+  });
 
   // Toggle between ANIME and MANGA
   animeButton.addEventListener("click", () => {
@@ -29,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     chrome.runtime.sendMessage(
-      { action: "fetchData", userName: userName, type: selectedType },
+      { action: "FETCH", userName: userName, type: selectedType },
       (response) => {
         if (response.error) {
           console.error("Error:", response.error);

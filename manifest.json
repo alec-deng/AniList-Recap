@@ -7,7 +7,7 @@
     "default_popup": "popup/popup.html",
     "default_icon": "img/icon.png"
   },
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["identity", "storage", "activeTab", "scripting"],
   "host_permissions": ["https://graphql.anilist.co/*"],
   "background": {
     "service_worker": "background/background.js",

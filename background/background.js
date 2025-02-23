@@ -1,23 +1,49 @@
-import { fetchList } from "./api.js";
-
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Anilist Analyzer Extension Installed!");
-});
+import { fetchList } from "./GraphQL/fetchList.js";
+import Storage from "./storage.js";
+import Auth from "./GraphQL/auth.js";
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received:", message);
   console.log("Sender details:", sender);
 
   switch (message.action) {
-    case "fetchData":
+    case "FETCH":
       fetchList(message.userName, message.type)
         .then((data) => {
           sendResponse(data);
         })
         .catch((error) => {
-          console.error("Error fetching data:", error);
-          sendResponse({ error: "Failed to fetch data" });
+          console.error(error);
+          sendResponse({ error: error.message });
         });
+      break;
+
+    case "USER":
+      Storage.get(Storage.DATA.USER)
+        .then((user) => sendResponse({ user: user }))
+        .catch((error) => {
+          console.log(error);
+          sendResponse({ error: error.message });
+        });
+      break;
+
+    case "LOGIN":
+      Auth.login()
+        .then((user) => sendResponse({ user: user }))
+        .catch((error) => {
+          console.log(error);
+          sendResponse({ error: error.message });
+        });
+      break;
+
+    case "LOGOUT":
+      Auth.logout()
+        .then(() => sendResponse({}))
+        .catch((error) => {
+          console.log(error);
+          sendResponse({ error: error.message });
+        });
+      break;
   }
 
   // Keep listener active to wait for async response
