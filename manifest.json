@@ -1,0 +1,21 @@
+{
+  "name": "Anilist Analyzer",
+  "version": "1.0",
+  "description": "Analyze your Anilist anime data with graphs!",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://graphql.anilist.co/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://anilist.co/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
