@@ -1,5 +1,5 @@
 {
-  "name": "Anilist Analyzer",
+  "name": "Anilist Annual Report",
   "version": "1.0",
   "description": "Analyze your Anilist anime data with graphs!",
   "manifest_version": 3,
@@ -10,7 +10,8 @@
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": ["https://graphql.anilist.co/*"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
