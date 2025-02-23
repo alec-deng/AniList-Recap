@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Get UI elements
   const loginButton = document.getElementById("loginButton");
+  const logoutButton = document.getElementById("loginButton");
   const animeButton = document.getElementById("animeButton");
   const mangaButton = document.getElementById("mangaButton");
   const fetchButton = document.getElementById("fetchData");
@@ -14,6 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         console.log("Received Data:", response);
         output.textContent = JSON.stringify(response, null, 2);
+      }
+    });
+  });
+
+  loginButton.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "LOGOUT" }, (response) => {
+      if (response.error) {
+        console.error("Error:", response.error);
       }
     });
   });

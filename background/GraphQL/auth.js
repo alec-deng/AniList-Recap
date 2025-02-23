@@ -2,20 +2,19 @@ import AniList from "./anilist.js";
 import Storage from "../storage.js";
 
 export default class Auth {
-  /**
-   * Start login process.
-   */
+  // Send a request for user authorization
   static async login() {
     const redirectUrl = await chrome.identity.launchWebAuthFlow({
       url: "https://anilist.co/api/v2/oauth/authorize?client_id=24586&response_type=token",
       interactive: true,
     });
-    const fragment = redirectUrl.split("#")[1]; // Get the fragment part (after '#')
-    const params = new URLSearchParams(fragment); // Parse the fragment as a query string
+    // Get the fragment part (after '#') for access token
+    const fragment = redirectUrl.split("#")[1];
+    const params = new URLSearchParams(fragment);
     const accessToken = params.get("access_token");
 
     if (accessToken === null) {
-      throw new Error(chrome.i18n.getMessage("ERROR_MissingAccessToken"));
+      throw new Error("Missing Access Token");
     }
 
     // Store access token and user data.
@@ -29,9 +28,7 @@ export default class Auth {
     return user;
   }
 
-  /**
-   * Logout user.
-   */
+  // Logout user, remove user data in the storage
   static async logout() {
     return Promise.all([
       Storage.remove(Storage.DATA.ACCESS_TOKEN),

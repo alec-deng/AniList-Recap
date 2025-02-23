@@ -5,25 +5,19 @@ export default class AniList {
     this.#accessToken = token;
   }
 
-  /**
-   * Get AniList API request headers.
-   */
+  // Construct request header
   #headers() {
     const headers = new Headers();
-
     headers.append("Content-Type", "application/json");
     headers.append("Accept", "application/json");
 
     if (this.#accessToken) {
       headers.append("Authorization", `Bearer ${this.#accessToken}`);
     }
-
     return headers;
   }
 
-  /**
-   * Get authenticated user data.
-   */
+  // Get authenticated user data.
   async user() {
     const query = `
       query Query {
@@ -40,7 +34,7 @@ export default class AniList {
 
     const response = await fetch("https://graphql.anilist.co", {
       method: "POST",
-      headers: this.#headers,
+      headers: this.#headers(),
       body: JSON.stringify({ query }),
     });
 
