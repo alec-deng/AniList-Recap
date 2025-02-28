@@ -6,9 +6,9 @@ export default class Auth {
 
   // Initiates the OAuth login flow.
   static async login() {
-    const authUrl = new URL('https://anilist.co/api/v2/oauth/authorize');
-    authUrl.searchParams.append('client_id', this.CLIENT_ID);
-    authUrl.searchParams.append('response_type', 'token');
+    const authUrl = new URL("https://anilist.co/api/v2/oauth/authorize");
+    authUrl.searchParams.append("client_id", this.CLIENT_ID);
+    authUrl.searchParams.append("response_type", "token");
 
     const redirectUrl = await chrome.identity.launchWebAuthFlow({
       url: authUrl.toString(),
