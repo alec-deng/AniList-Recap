@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const mangaButton = document.getElementById("mangaButton");
   const fetchButton = document.getElementById("fetchData");
 
+  // Login button clicked
   loginButton.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "LOGIN" }, (response) => {
       if (response.error) {
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Logout button clicked
   logoutButton.addEventListener("click", () => {
     chrome.runtime.sendMessage({ action: "LOGOUT" }, (response) => {
       if (response.error) {
