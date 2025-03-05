@@ -7,25 +7,16 @@
     "default_popup": "popup/popup.html",
     "default_icon": "img/icon.png"
   },
-  "permissions": [
-    "identity",
-    "storage"
-  ],
-  "host_permissions": [
-    "https://graphql.anilist.co/*"
-  ],
+  "permissions": ["identity", "storage"],
+  "host_permissions": ["https://graphql.anilist.co/*"],
   "background": {
     "service_worker": "background/background.js",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://anilist.co/*"
-      ],
-      "js": [
-        "content/content.js"
-      ]
+      "matches": ["https://anilist.co/*"],
+      "js": ["content/content.js"]
     }
   ]
 }
