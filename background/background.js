@@ -2,6 +2,7 @@ import { fetchList } from "./GraphQL/fetchList.js";
 import Storage from "./storage.js";
 import Auth from "./GraphQL/auth.js";
 
+// Listener for action send from the popup page
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received:", message);
   console.log("Sender details:", sender);
