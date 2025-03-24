@@ -1,5 +1,5 @@
 import Storage from "../background/storage.js";
-import { processAnimeData, sortAnimeByScore } from '../background/utils/processList.js';
+import * as processList from '../background/utils/processList.js';
 
 document.addEventListener("DOMContentLoaded", () => {
   let selectedType = "ANIME"; // Default to ANIME
@@ -61,11 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.error) {
           console.error("Error:", response.error);
         } else {
-          const animeList = processAnimeData(response.data);
-          const sortedList = sortAnimeByScore(animeList);
-
-          console.log("Sorted by Score:", sortedList);
-          output.textContent = JSON.stringify(sortedList, null, 2);
+          const sortedList = processList.sortedList(response.data);
+          const scoreCounts = processList.scoreList(sortedList);
+          output.textContent = JSON.stringify(scoreCounts, null, 2);
         }
       }
     );
