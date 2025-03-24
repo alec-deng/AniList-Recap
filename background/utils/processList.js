@@ -4,7 +4,7 @@ export function processAnimeData(data) {
   data.MediaListCollection.lists.forEach(list => {
     list.entries.forEach(entry => {
       animeList.push({
-        staus: list.name,
+        status: list.name,
         title: entry.media.title.native,
         score: entry.score,
         episodes: entry.media.episodes,
