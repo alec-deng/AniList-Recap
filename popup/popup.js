@@ -1,3 +1,4 @@
+import Storage from "../background/storage.js";
 import { processAnimeData, sortAnimeByScore } from '../background/utils/processList.js';
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -47,9 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fetch Data when the button is clicked
   fetchButton.addEventListener("click", async () => {
     console.log("Fetch button clicked!");
-    const userName = document.getElementById("username").value;
+    const response = await Storage.get(Storage.DATA.USER);
+    const userName = response.data.Viewer.name;
     if (!userName) {
-      alert("Please enter a userName!");
+      alert("Please login!");
       return;
     }
 
