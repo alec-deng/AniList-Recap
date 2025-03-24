@@ -49,11 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchButton.addEventListener("click", async () => {
     console.log("Fetch button clicked!");
     const response = await Storage.get(Storage.DATA.USER);
-    const userName = response.data.Viewer.name;
-    if (!userName) {
+    if (response === null) {
       alert("Please login!");
       return;
     }
+    const userName = response.data.Viewer.name;
 
     chrome.runtime.sendMessage(
       { action: "FETCH", userName: userName, type: selectedType },
