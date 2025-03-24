@@ -18,6 +18,8 @@ export async function fetchList(userName, type) {
         }
         episodes
         averageScore
+        season
+        seasonYear
         startDate {
           year
           month

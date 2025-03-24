@@ -1,3 +1,5 @@
+import { processAnimeData, sortAnimeByScore } from '../background/utils/processList.js';
+
 document.addEventListener("DOMContentLoaded", () => {
   let selectedType = "ANIME"; // Default to ANIME
 
@@ -57,8 +59,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response.error) {
           console.error("Error:", response.error);
         } else {
-          console.log("Received Data:", response);
-          output.textContent = JSON.stringify(response, null, 2);
+          const animeList = processAnimeData(response.data);
+          const sortedList = sortAnimeByScore(animeList);
+
+          console.log("Sorted by Score:", sortedList);
+          output.textContent = JSON.stringify(sortedList, null, 2);
         }
       }
     );

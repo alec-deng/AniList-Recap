@@ -1,28 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anilist Analyzer</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <h2>Analyze Your Anilist</h2>
 
-    <button id="loginButton">Login</button>
-    <button id="logoutButton">Logout</button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anilist Analyzer</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
 
-    <input type="text" id="username" placeholder="Enter Anilist User ID" />
+<body>
+  <h2>Analyze Your Anilist</h2>
 
-    <div class="button-group">
-      <button id="animeButton" class="active">Anime</button>
-      <button id="mangaButton">Manga</button>
-    </div>
+  <button id="loginButton">Login</button>
+  <button id="logoutButton">Logout</button>
 
-    <button id="fetchData">Fetch Data</button>
+  <input type="text" id="username" placeholder="Enter Anilist User ID" />
 
-    <pre id="output"></pre>
+  <div class="button-group">
+    <button id="animeButton" class="active">Anime</button>
+    <button id="mangaButton">Manga</button>
+  </div>
 
-    <script src="popup.js"></script>
-  </body>
+  <button id="fetchData">Fetch Data</button>
+
+  <pre id="output"></pre>
+
+  <script type="module" src="popup.js"></script>
+</body>
+
 </html>
