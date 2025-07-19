@@ -1,5 +1,5 @@
 {
-  "name": "Anilist Annual Report",
+  "name": "Anilist Recap",
   "version": "1.0",
   "description": "Analyze your Anilist anime data with graphs!",
   "manifest_version": 3,
@@ -16,7 +16,8 @@
   "content_scripts": [
     {
       "matches": ["https://anilist.co/*"],
-      "js": ["content/content.js"]
+      "js": ["content/content.js"],
+      "type": "module"
     }
   ]
 }
