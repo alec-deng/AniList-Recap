@@ -1,5 +1,5 @@
 import Storage from "./background/storage"
-import Auth from "./background/GraphQL/auth"
+import Auth from "./background/auth"
 
 // Listen for messages from popup or content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

@@ -1,5 +1,5 @@
 import AniList from "./anilist";
-import Storage from "../storage";
+import Storage from "./storage";
 
 export default class Auth {
   static CLIENT_ID = 24586;
