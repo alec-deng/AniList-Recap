@@ -1,2 +1,2 @@
-# AniList-Annual-Report
-Extension for generate AniList yearly stats
+# AniList Recap
+Extension for generating AniList yearly stats
