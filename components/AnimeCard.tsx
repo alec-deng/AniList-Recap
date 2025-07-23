@@ -18,13 +18,13 @@ type Props = {
 export const AnimeCard: React.FC<Props> = ({ anime, onIncrement, onScoreChange, loading }) => {
   const [score, setScore] = useState(anime.score)
   return (
-    <div className="flex items-center gap-2 p-2 border rounded mb-2 bg-white">
+    <div className="flex items-center gap-2 p-2 border rounded mb-2 bg-white-100">
       <img src={anime.cover} alt={anime.title} className="w-12 h-16 object-cover rounded" />
       <div className="flex-1">
         <div className="font-semibold">{anime.title}</div>
         <div className="text-xs text-gray-500">Progress: {anime.progress}</div>
         <button
-          className="px-2 py-1 bg-blue-500 text-white rounded text-xs mt-1"
+          className="px-2 py-1 bg-blue text-white rounded text-xs mt-1"
           onClick={onIncrement}
           disabled={loading}
         >

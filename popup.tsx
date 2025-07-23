@@ -23,10 +23,10 @@ function Popup() {
             <img src={avatar} alt="Avatar" className="w-16 h-16"/>
           )}
           {userName && (
-            <p className="text-[#edf1f5] pl-4 pt-6 font-bold tracking-wide text-sm">{userName}</p>
+            <p className="text-white pl-4 pt-6 font-bold tracking-wide text-sm">{userName}</p>
           )}
           <button
-            className="ml-auto px-3 py-1 bg-blue-500 text-white rounded text-xs"
+            className="ml-auto px-3 py-1 bg-blue text-white rounded text-xs"
             onClick={user ? logout : login}
             disabled={loading}
           >
@@ -34,7 +34,7 @@ function Popup() {
           </button>
         </div>
         <Tabs tabs={TAB_NAMES} selected={selectedTab} onSelect={setSelectedTab} />
-        <div className="bg-[#edf1f5]">
+        <div className="bg-white">
           {selectedTab === 0 && <AnimeTab />}
           {selectedTab === 1 && <StatsTab />}
         </div>
