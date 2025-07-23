@@ -1,5 +1,5 @@
-import AniList from "./anilist.js";
-import Storage from "../storage.js";
+import AniList from "./anilist";
+import Storage from "../storage";
 
 export default class Auth {
   static CLIENT_ID = 24586;
@@ -7,13 +7,25 @@ export default class Auth {
   // Initiates the OAuth login flow.
   static async login() {
     const authUrl = new URL("https://anilist.co/api/v2/oauth/authorize");
-    authUrl.searchParams.append("client_id", this.CLIENT_ID);
+    authUrl.searchParams.append("client_id", this.CLIENT_ID.toString())
     authUrl.searchParams.append("response_type", "token");
 
-    const redirectUrl = await chrome.identity.launchWebAuthFlow({
-      url: authUrl.toString(),
-      interactive: true,
-    });
+    let redirectUrl: string | undefined
+
+    try {
+      redirectUrl = await chrome.identity.launchWebAuthFlow({
+        url: authUrl.toString(),
+        interactive: true,
+      })
+    } catch (err) {
+      console.error("[Auth] launchWebAuthFlow failed:", err)
+      throw new Error("OAuth login failed or was cancelled")
+    }
+
+    if (!redirectUrl) {
+      console.error("[Auth] No redirectUrl returned")
+      throw new Error("Authentication flow was cancelled or blocked")
+    }
 
     // Extract the fragment after '#' which contains the access token.
     const fragment = redirectUrl.split("#")[1];

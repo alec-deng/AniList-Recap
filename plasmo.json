@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "AniList Recap",
+  "version": "1.0.0",
+  "description": "Analyze your AniList anime data with graphs!",
+  "permissions": ["storage", "identity"],
+  "host_permissions": ["https://anilist.co/*", "https://graphql.anilist.co/*"],
+  "background": {
+    "service_worker": "background.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.tsx"
+  }
+}

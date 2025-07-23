@@ -1,24 +1,24 @@
 export default class AniList {
   #accessToken;
 
-  constructor(token) {
+  constructor(token: string) {
     this.#accessToken = token;
   }
 
   // Construct request header
-  #headers() {
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    headers.append("Accept", "application/json");
-
+  #headers(): Headers {
+    const headers = new Headers()
+    headers.append("Content-Type", "application/json")
+    headers.append("Accept", "application/json")
+    
     if (this.#accessToken) {
-      headers.append("Authorization", `Bearer ${this.#accessToken}`);
+      headers.append("Authorization", `Bearer ${this.#accessToken}`)
     }
-    return headers;
+    return headers
   }
 
   // Get authenticated user data.
-  async user() {
+  async user(): Promise<any> {
     const query = `
       query Query {
         Viewer {

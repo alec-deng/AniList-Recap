@@ -6,20 +6,20 @@ export default class Storage {
   };
 
   // Initialize or update data
-  static async set(key, data) {
-    const obj = {};
+  static async set(key: string, data: unknown): Promise<void> {
+    const obj: Record<string, unknown> = {};
     obj[key] = data;
     await chrome.storage.local.set(obj);
   }
 
   // Remove user data
-  static async remove(key) {
+  static async remove(key: string): Promise<void> {
     await chrome.storage.local.remove(key);
   }
 
   // Get current data
-  static async get(key) {
+  static async get<T = unknown>(key: string): Promise<T | null> {
     const data = await chrome.storage.local.get(key);
-    return data[key] || null;
+    return (data[key] as T) ?? null;
   }
 }
