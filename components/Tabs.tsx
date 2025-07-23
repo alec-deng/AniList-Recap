@@ -7,12 +7,12 @@ type TabsProps = {
 }
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => (
-  <div className="flex border-b mb-2">
+  <div className="flex">
     {tabs.map((tab, idx) => (
       <button
         key={tab}
-        className={`flex-1 py-2 text-sm font-medium ${
-          selected === idx ? "border-b-2 border-blue-500 text-blue-600" : "text-gray-500"
+        className={`flex-1 pt-0.5 pb-2 text-sm font-medium ${
+          selected === idx ? "text-[#e85fb2]" : "text-[#7a858f]"
         }`}
         onClick={() => onSelect(idx)}
       >

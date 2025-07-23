@@ -55,7 +55,7 @@ const UPDATE_SCORE_MUTATION = gql`
   }
 `
 
-export const DashboardTab: React.FC = () => {
+export const AnimeTab: React.FC = () => {
   const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
@@ -74,7 +74,9 @@ export const DashboardTab: React.FC = () => {
 
   return (
     <div className="p-2">
-      <div className="font-bold text-center mb-2">Currently Watching</div>
+      <p className="mb-2 ml-2 text-base font-normal text-[#323e4d] [transform:scaleY(1.1)]">
+        Watching
+      </p>
       {watchingList.length === 0 && <div className="text-center text-gray-500">No anime found.</div>}
       {watchingList.map((entry: any) => (
         <AnimeCard
