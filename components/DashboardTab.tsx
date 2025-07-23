@@ -70,14 +70,10 @@ export const DashboardTab: React.FC = () => {
   if (viewerLoading || loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4 text-red-500">Error loading anime list.</div>
 
-  const avatar = viewerData?.Viewer?.avatar?.medium
   const watchingList = data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
   return (
     <div className="p-2">
-      {avatar && (
-        <img src={avatar} alt="Avatar" className="w-16 h-16 rounded-full mx-auto mb-2" />
-      )}
       <div className="font-bold text-center mb-2">Currently Watching</div>
       {watchingList.length === 0 && <div className="text-center text-gray-500">No anime found.</div>}
       {watchingList.map((entry: any) => (
