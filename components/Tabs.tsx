@@ -12,7 +12,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => (
       <button
         key={tab}
         className={`flex-1 pt-0.5 pb-2 text-sm font-medium ${
-          selected === idx ? "text-[#e85fb2]" : "text-[#7a858f]"
+          selected === idx ? "text-pink" : "text-[#7a858f]"
         }`}
         onClick={() => onSelect(idx)}
       >
