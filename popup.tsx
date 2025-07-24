@@ -6,6 +6,7 @@ import { Tabs } from "./components/Tabs"
 import { AnimeTab } from "./components/AnimeTab"
 import { StatsTab } from "./components/StatsTab"
 import { SettingsTab } from "./components/SettingsTab"
+import { LoginPage } from "./components/LoginPage"
 import { useAuth } from "./hooks/useAuth"
 import "./styles/popup.css"
 
@@ -17,24 +18,21 @@ function Popup() {
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
 
+  if (!user) {
+    return <LoginPage />
+  }
+
   return (
     <ApolloProvider client={client}>
       <SettingsProvider>
         <div className="w-[400px] min-h-[400px]">
-          <div className="flex items-center justify-between mb-2 bg-[#1d2033] pt-10 pr-8 pl-10">
+          <div className="flex items-center space-x-4 justify-start mb-2 bg-[#1d2033] pt-10 pr-8 pl-10">
             {avatar && (
               <img src={avatar} alt="Avatar" className="w-16 h-16"/>
             )}
             {userName && (
-              <p className="text-white pl-4 pt-6 font-bold tracking-wide text-sm">{userName}</p>
+              <p className="text-white pt-6 font-bold tracking-wide text-sm">{userName}</p>
             )}
-            <button
-              className="ml-auto px-3 py-1 bg-blue text-white rounded text-xs"
-              onClick={user ? logout : login}
-              disabled={loading}
-            >
-              {user ? "Logout" : "Login"}
-            </button>
           </div>
           <Tabs tabs={TAB_NAMES} selected={selectedTab} onSelect={setSelectedTab} />
           <div className="bg-white">
