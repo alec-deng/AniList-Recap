@@ -33,6 +33,26 @@ const UPDATE_DISPLAY_ADULT_CONTENT = gql`
   }
 `
 
+const UPDATE_SCORE_FORMAT = gql`
+  mutation ($scoreFormat: ScoreFormat) {
+    UpdateUser(scoreFormat: $scoreFormat) {
+      mediaListOptions {
+        scoreFormat
+      }
+    }
+  }
+`
+
+const UPDATE_ROW_ORDER = gql`
+  mutation ($rowOrder: String) {
+    UpdateUser(rowOrder: $rowOrder) {
+      mediaListOptions {
+        rowOrder
+      }
+    }
+  }
+`
+
 const colorOptions = [
   { name: 'blue', color: '#3db4f2' },
   { name: 'purple', color: '#b368e6' },
@@ -45,13 +65,17 @@ const colorOptions = [
 
 export const SettingsTab: React.FC = () => {
   const { 
-    profileColor, 
-    titleLanguage, 
-    displayAdultContent, 
-    setProfileColor, 
-    setTitleLanguage, 
-    setDisplayAdultContent, 
-    loading 
+    profileColor,
+    titleLanguage,
+    displayAdultContent,
+    scoreFormat,
+    rowOrder,
+    setProfileColor,
+    setTitleLanguage,
+    setDisplayAdultContent,
+    setScoreFormat,
+    setRowOrder,
+    loading
   } = useSettings()
 
   const { logout } = useAuth()
@@ -59,6 +83,8 @@ export const SettingsTab: React.FC = () => {
   const [updateProfileColor] = useMutation(UPDATE_PROFILE_COLOR)
   const [updateTitleLanguage] = useMutation(UPDATE_TITLE_LANGUAGE)
   const [updateDisplayAdultContent] = useMutation(UPDATE_DISPLAY_ADULT_CONTENT)
+  const [updateScoreFormat] = useMutation(UPDATE_SCORE_FORMAT)
+  const [updateRowOrder] = useMutation(UPDATE_ROW_ORDER)
 
   const handleColorChange = async (color: string) => {
     setProfileColor(color)
@@ -87,10 +113,28 @@ export const SettingsTab: React.FC = () => {
     }
   }
 
+  const handleScoreFormatChange = async (format: string) => {
+    setScoreFormat(format)
+    try {
+      await updateScoreFormat({ variables: { scoreFormat: format } })
+    } catch (error) {
+      console.error('Failed to update score format:', error)
+    }
+  }
+
+  const handleRowOrderChange = async (order: string) => {
+    setRowOrder(order)
+    try {
+      await updateRowOrder({ variables: { rowOrder: order } })
+    } catch (error) {
+      console.error('Failed to update row order:', error)
+    }
+  }
+
   if (loading) return <div className="p-4">Loading...</div>
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-5">
       {/* Profile Color */}
       <div>
         <h3 className="text-sm font-medium mb-3 text-gray">Profile Color</h3>
@@ -118,7 +162,7 @@ export const SettingsTab: React.FC = () => {
 
       {/* Title Language */}
       <div>
-        <h3 className="text-sm font-medium mb-3 text-gray">Title Language</h3>
+        <h3 className="text-sm font-medium mb-2 text-gray">Title Language</h3>
         <select 
           value={titleLanguage}
           onChange={(e) => handleLanguageChange(e.target.value)}
@@ -130,9 +174,40 @@ export const SettingsTab: React.FC = () => {
         </select>
       </div>
 
+      {/* Score Format */}
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-gray">Scoring System</h3>
+        <select 
+          value={scoreFormat}
+          onChange={(e) => handleScoreFormatChange(e.target.value)}
+          className="w-full p-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue"
+        >
+          <option value="POINT_100">100 Point (55/100)</option>
+          <option value="POINT_10_DECIMAL">10 Point Decimal (5.5/10)</option>
+          <option value="POINT_10">10 Point (5/10)</option>
+          <option value="POINT_5">5 Star (3/5)</option>
+          <option value="POINT_3">3 Point Smiley :)</option>
+        </select>
+      </div>
+
+      {/* Row Order */}
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-gray">Default List Order</h3>
+        <select 
+          value={rowOrder}
+          onChange={(e) => handleRowOrderChange(e.target.value)}
+          className="w-full p-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue"
+        >
+          <option value="score">Score</option>
+          <option value="title">Title</option>
+          <option value="updateAt">Last Updated</option>
+          <option value="id">Last Added</option>
+        </select>
+      </div>
+
       {/* Adult Content */}
       <div>
-        <label className="flex items-center space-x-3 cursor-pointer">
+        <label className="flex items-center p-1 space-x-3 cursor-pointer">
           <input
             type="checkbox"
             checked={displayAdultContent}

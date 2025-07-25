@@ -18,6 +18,10 @@ const SETTINGS_QUERY = gql`
         titleLanguage
         displayAdultContent
       }
+      mediaListOptions {
+        scoreFormat
+        rowOrder
+      }
     }
   }
 `
@@ -26,9 +30,13 @@ interface SettingsContextType {
   profileColor: string
   titleLanguage: string
   displayAdultContent: boolean
+  scoreFormat: string
+  rowOrder: string
   setProfileColor: (color: string) => void
   setTitleLanguage: (language: string) => void
   setDisplayAdultContent: (display: boolean) => void
+  setScoreFormat: (format: string) => void
+  setRowOrder: (order: string) => void
   loading: boolean
 }
 
@@ -38,6 +46,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [profileColor, setProfileColorState] = useState<string>('blue')
   const [titleLanguage, setTitleLanguageState] = useState<string>('ROMAJI')
   const [displayAdultContent, setDisplayAdultContentState] = useState<boolean>(false)
+  const [scoreFormat, setScoreFormatState] = useState<string>('POINT_10')
+  const [rowOrder, setRowOrderState] = useState<string>('score')
 
   // Get user ID first
   const { data: viewerData } = useQuery(VIEWER_QUERY)
@@ -53,9 +63,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     if (settingsData?.User?.options) {
       const options = settingsData.User.options
+      const mediaListOptions = settingsData.User.mediaListOptions
       setProfileColorState(options.profileColor || 'blue')
       setTitleLanguageState(options.titleLanguage || 'ROMAJI')
       setDisplayAdultContentState(options.displayAdultContent || false)
+      setScoreFormatState(mediaListOptions.scoreFormat || 'POINT_10')
+      setRowOrderState(mediaListOptions.rowOrder || 'score')
     }
   }, [settingsData])
 
@@ -68,15 +81,25 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const setDisplayAdultContent = async (display: boolean) => {
     setDisplayAdultContentState(display)
   }
+  const setScoreFormat = async (format: string) => {
+    setScoreFormatState(format)
+  }
+  const setRowOrder = async (order: string) => {
+    setRowOrderState(order)
+  }
 
   return (
     <SettingsContext.Provider value={{ 
-      profileColor, 
-      titleLanguage, 
-      displayAdultContent, 
+      profileColor,
+      titleLanguage,
+      displayAdultContent,
+      scoreFormat,
+      rowOrder,
       setProfileColor,
       setTitleLanguage,
       setDisplayAdultContent,
+      setScoreFormat,
+      setRowOrder,
       loading 
     }}>
       {children}
