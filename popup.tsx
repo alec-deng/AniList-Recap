@@ -14,7 +14,7 @@ const TAB_NAMES = ["Anime List", "Stats", "Settings"]
 
 function Popup() {
   const [selectedTab, setSelectedTab] = useState(0)
-  const { user, loading, login, logout } = useAuth()
+  const { user } = useAuth()
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
 

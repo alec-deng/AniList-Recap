@@ -24,7 +24,6 @@ export default class AniList {
         Viewer {
           id
           name
-          siteUrl
           avatar {
             medium
           }
