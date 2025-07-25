@@ -73,10 +73,10 @@ export const AnimeTab: React.FC = () => {
   const watchingList = data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
   return (
-    <div className="p-2">
-      <p className="mb-2 ml-2 text-base font-normal text-[#323e4d] [transform:scaleY(1.1)]">
+    <div className="p-4 space-y-2">
+      <h3 className="text-lg font-medium text-gray">
         Watching
-      </p>
+      </h3>
       {watchingList.length === 0 && <div className="text-center text-gray-500">No anime found.</div>}
       {watchingList.map((entry: any) => (
         <AnimeCard
