@@ -70,11 +70,15 @@ export const SettingsTab: React.FC = () => {
     displayAdultContent,
     scoreFormat,
     rowOrder,
+    manualCompletion,
+    separateEntries,
     setProfileColor,
     setTitleLanguage,
     setDisplayAdultContent,
     setScoreFormat,
     setRowOrder,
+    setManualCompletion,
+    setSeparateEntries,
     loading
   } = useSettings()
 
@@ -131,13 +135,21 @@ export const SettingsTab: React.FC = () => {
     }
   }
 
+  const handleManualCompletionChange = async (manual: boolean) => {
+    setManualCompletion(manual)
+  }
+
+  const handleSeparateEntriesChange = async (separate: boolean) => {
+    setSeparateEntries(separate)
+  }
+
   if (loading) return <div className="p-4">Loading...</div>
 
   return (
     <div className="p-4 space-y-5">
       {/* Profile Color */}
       <div>
-        <h3 className="text-sm font-medium mb-3 text-gray">Profile Color</h3>
+        <h3 className="text-sm font-medium mb-2 text-gray">Profile Color</h3>
         <div className="grid grid-cols-7 gap-2">
           {colorOptions.map((option) => (
             <button
@@ -205,21 +217,47 @@ export const SettingsTab: React.FC = () => {
         </select>
       </div>
 
+      {/* Manual Completion */}
+      <div>
+        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={manualCompletion}
+            onChange={(e) => handleManualCompletionChange(e.target.checked)}
+            className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
+          />
+          <span className="text-sm text-gray">Manually Mark As Completed</span>
+        </label>
+      </div>
+
+      {/* Separate Entries */}
+      <div>
+        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={separateEntries}
+            onChange={(e) => handleSeparateEntriesChange(e.target.checked)}
+            className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
+          />
+          <span className="text-sm text-gray">Separate Caught-Up Entries</span>
+        </label>
+      </div>
+
       {/* Adult Content */}
       <div>
-        <label className="flex items-center p-1 space-x-3 cursor-pointer">
+        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
           <input
             type="checkbox"
             checked={displayAdultContent}
             onChange={(e) => handleAdultContentChange(e.target.checked)}
             className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
           />
-          <span className="text-sm text-gray">18+ content</span>
+          <span className="text-sm text-gray">18+ Content</span>
         </label>
       </div>
 
       {/* Logout */}
-      <div className="flex items-center justify-between">
+      <div className="pt-1 flex items-center justify-between">
         <button
           onClick={logout}
           className="w-16 h-8 bg-blue text-white-100 rounded-lg text-sm font-medium hover:bg-[#36a3dd] duration-200"

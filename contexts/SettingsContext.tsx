@@ -32,11 +32,15 @@ interface SettingsContextType {
   displayAdultContent: boolean
   scoreFormat: string
   rowOrder: string
+  manualCompletion: boolean
+  separateEntries: boolean
   setProfileColor: (color: string) => void
   setTitleLanguage: (language: string) => void
   setDisplayAdultContent: (display: boolean) => void
   setScoreFormat: (format: string) => void
   setRowOrder: (order: string) => void
+  setManualCompletion: (manual: boolean) => void
+  setSeparateEntries: (separate: boolean) => void
   loading: boolean
 }
 
@@ -48,6 +52,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [displayAdultContent, setDisplayAdultContentState] = useState<boolean>(false)
   const [scoreFormat, setScoreFormatState] = useState<string>('POINT_10')
   const [rowOrder, setRowOrderState] = useState<string>('score')
+  const [manualCompletion, setManualCompletionState] = useState<boolean>(false)
+  const [separateEntries, setSeparateEntriesState] = useState<boolean>(false)
 
   // Get user ID first
   const { data: viewerData } = useQuery(VIEWER_QUERY)
@@ -72,6 +78,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [settingsData])
 
+  const localSettings = new Promise((resolve => {
+    chrome.storage.local.get(['manualCompletion', 'separateEntries'], (result) => {
+      setManualCompletionState(result.manualCompletion || false)
+      setSeparateEntriesState(result.separateEntries || false)
+      resolve(true)
+    })
+  }))
+
   const setProfileColor = async (color: string) => {
     setProfileColorState(color)
   }
@@ -87,6 +101,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const setRowOrder = async (order: string) => {
     setRowOrderState(order)
   }
+  const setManualCompletion = async (manual: boolean) => {
+    setManualCompletionState(manual)
+    chrome.storage.local.set({ manualCompletion: manual })
+  }
+  const setSeparateEntries = async (separate: boolean) => {
+    setSeparateEntriesState(separate)
+    chrome.storage.local.set({ separateEntries: separate })
+  }
 
   return (
     <SettingsContext.Provider value={{ 
@@ -95,11 +117,15 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       displayAdultContent,
       scoreFormat,
       rowOrder,
+      manualCompletion,
+      separateEntries,
       setProfileColor,
       setTitleLanguage,
       setDisplayAdultContent,
       setScoreFormat,
       setRowOrder,
+      setManualCompletion,
+      setSeparateEntries,
       loading 
     }}>
       {children}
