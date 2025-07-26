@@ -212,7 +212,7 @@ export const SettingsTab: React.FC = () => {
         >
           <option value="score">Score</option>
           <option value="title">Title</option>
-          <option value="updateAt">Last Updated</option>
+          <option value="updatedAt">Last Updated</option>
           <option value="id">Last Added</option>
         </select>
       </div>
