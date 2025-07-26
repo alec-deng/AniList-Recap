@@ -8,6 +8,7 @@
     "@radix-ui/react-slider": "^1.3.5",
     "chart.js": "^4.5.0",
     "graphql": "^16.11.0",
+    "lucide-react": "^0.526.0",
     "plasmo": "^0.90.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -27,8 +28,14 @@
     "name": "AniList Recap",
     "version": "1.0.0",
     "description": "Analyze your AniList anime data with graphs!",
-    "permissions": ["storage", "identity"],
-    "host_permissions": ["https://anilist.co/*", "https://graphql.anilist.co/*"],
+    "permissions": [
+      "storage",
+      "identity"
+    ],
+    "host_permissions": [
+      "https://anilist.co/*",
+      "https://graphql.anilist.co/*"
+    ],
     "background": {
       "service_worker": "background.ts",
       "type": "module"
