@@ -15,9 +15,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
       {tabs.map((tab, idx) => (
         <button
           key={tab}
-          className={`flex-1 pt-0.5 pb-2 text-sm font-medium ${
-            selected === idx ? `text-gray` : "text-gray-500"
-          }`}
+          className={"text-gray flex-1 pt-0.5 pb-2 text-sm font-medium"}
           style={selected === idx ? { color: profileColor } : {}}
           onClick={() => onSelect(idx)}
         >
