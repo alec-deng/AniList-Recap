@@ -1,4 +1,5 @@
-import React from "react"
+import React, { useState } from "react"
+import { useSettings } from "../contexts/SettingsContext"
 
 type TabsProps = {
   tabs: string[]
@@ -6,18 +7,23 @@ type TabsProps = {
   onSelect: (idx: number) => void
 }
 
-export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => (
-  <div className="flex">
-    {tabs.map((tab, idx) => (
-      <button
-        key={tab}
-        className={`flex-1 pt-0.5 pb-2 text-sm font-medium ${
-          selected === idx ? "text-pink" : "text-[#7a858f]"
-        }`}
-        onClick={() => onSelect(idx)}
-      >
-        {tab}
-      </button>
-    ))}
-  </div>
-)
+export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
+  const { profileColor } = useSettings()
+  
+  return (
+    <div className="flex">
+      {tabs.map((tab, idx) => (
+        <button
+          key={tab}
+          className={`flex-1 pt-0.5 pb-2 text-sm font-medium ${
+            selected === idx ? `text-gray` : "text-gray-500"
+          }`}
+          style={selected === idx ? { color: profileColor } : {}}
+          onClick={() => onSelect(idx)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  )
+}

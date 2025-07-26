@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { useQuery, useMutation, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { useSettings } from "../contexts/SettingsContext"
@@ -23,9 +23,7 @@ const WATCHING_LIST_QUERY = gql`
           media {
             id
             title {
-              romaji
-              english
-              native
+              userPreferred
             }
             nextAiringEpisode {
               episode
@@ -84,7 +82,8 @@ const KEEP_CURRENT_MUTATION = gql`
 `
 
 export const AnimeTab: React.FC = () => {
-  const { 
+  const {
+    profileColor,
     titleLanguage,
     displayAdultContent,
     scoreFormat,
@@ -101,6 +100,13 @@ export const AnimeTab: React.FC = () => {
     skip: !userId
   })
 
+  // Force refetch when settings changes
+  useEffect(() => {
+    if (userId) {
+      refetch()
+    }
+  }, [titleLanguage, scoreFormat, displayAdultContent, userId, refetch])
+
   const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
   const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
   const [markCompleted] = useMutation(MARK_COMPLETED_MUTATION)
@@ -111,15 +117,6 @@ export const AnimeTab: React.FC = () => {
 
   const watchingList = data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
-  // Helper function to get title based on language preference
-  const getTitle = (titleObj: any) => {
-    switch (titleLanguage) {
-      case 'ENGLISH': return titleObj.english || titleObj.romaji || titleObj.native
-      case 'NATIVE': return titleObj.native || titleObj.romaji || titleObj.english
-      case 'ROMAJI': return titleObj.romaji || titleObj.english || titleObj.native
-    }
-  }
-
   // Define the anime type
   type AnimeEntry = {
     id: number
@@ -127,7 +124,7 @@ export const AnimeTab: React.FC = () => {
     cover: string
     progress: number
     score: number
-    nextAiringEpisode: number
+    nextAiringEpisode: number | null
     totalEpisodes: number | null
     isAdult: boolean
     updatedAt: string
@@ -137,11 +134,11 @@ export const AnimeTab: React.FC = () => {
   // Transform entries to our anime format
   const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
     id: entry.id,
-    title: getTitle(entry.media.title),
+    title: entry.media.title.userPreferred,
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
-    nextAiringEpisode: entry.media.nextAiringEpisode.episode,
+    nextAiringEpisode: entry.media.nextAiringEpisode?.episode || null,
     totalEpisodes: entry.media.episodes,
     isAdult: entry.media.isAdult,
     updatedAt: entry.updatedAt,
@@ -170,11 +167,16 @@ export const AnimeTab: React.FC = () => {
 
   // Separate entries if setting is enabled
   const caughtUpAnime = separateEntries 
-    ? sortedAnime.filter(anime => anime.nextAiringEpisode && anime.progress >= anime.nextAiringEpisode - 1)
+    ? sortedAnime.filter(anime => 
+        (anime.totalEpisodes !== null &&
+          anime.progress === anime.totalEpisodes) ||
+        (anime.nextAiringEpisode !== null &&
+          anime.progress >= anime.nextAiringEpisode - 1)
+      )
     : []
   
   const behindAnime = separateEntries 
-    ? sortedAnime.filter(anime => !anime.nextAiringEpisode || anime.progress < anime.nextAiringEpisode - 1)
+    ? sortedAnime.filter(anime => !caughtUpAnime.includes(anime))
     : sortedAnime
 
   // Handle manual progress change
@@ -215,6 +217,7 @@ export const AnimeTab: React.FC = () => {
           <AnimeCard
             key={anime.id}
             anime={anime}
+            profileColor={profileColor}
             onScoreChange={(score) => handleScoreChange(anime, score)}
             onMarkCompleted={() => handleMarkCompleted(anime)}
             onProgressChange={(progress) => handleProgressChange(anime, progress)}

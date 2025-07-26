@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import '../styles/animation.css'
 
 type Anime = {
   id: number
@@ -12,6 +13,7 @@ type Anime = {
 
 type Props = {
   anime: Anime
+  profileColor: string
   onScoreChange: (score: number) => void
   onMarkCompleted: () => void
   onProgressChange: (progress: number) => void
@@ -34,6 +36,7 @@ const getMaxScore = (format: string): number => {
 
 export const AnimeCard: React.FC<Props> = ({
   anime,
+  profileColor,
   onScoreChange, 
   onMarkCompleted,
   onProgressChange,
@@ -69,7 +72,7 @@ export const AnimeCard: React.FC<Props> = ({
 
   const handleScoreInputBlur = () => {
     const numValue = parseFloat(tempScore)
-    
+
     // Check if it's a valid number and within range
     if (isNaN(numValue) || numValue < 0 || numValue > maxScore) {
       // Invalid input - revert to current score
@@ -149,7 +152,8 @@ export const AnimeCard: React.FC<Props> = ({
       {showCompletionButton && (
         <div className="absolute top-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
-            className="w-full bg-green-500 group-hover:bg-green text-white px-2 py-1 rounded text-xs font-medium shadow-lg"
+            className="w-full text-white px-2 py-1 rounded text-xs font-medium shadow-lg"
+            style={{ backgroundColor: profileColor }}
             onClick={onMarkCompleted}
             disabled={loading}
           >
@@ -159,9 +163,9 @@ export const AnimeCard: React.FC<Props> = ({
       )}
 
       {/* Full bottom overlay covering all content */}
-      <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-3">
+      <div className="absolute bottom-0 left-0 right-0 bg-black/65 p-3">
         {/* Title */}
-        <h4 className="text-white font-medium text-xs leading-tight mb-1">
+        <h4 className="font-medium text-xs leading-tight mb-1 text-white">
           {anime.title}
         </h4>
         
@@ -176,12 +180,17 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleProgressInputChange(e.target.value)}
                 onBlur={handleProgressInputBlur}
                 onKeyDown={handleProgressInputKeyDown}
-                className="bg-transparent text-white text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                style={{ 
+                  color: profileColor,
+                  borderBottomColor: `${profileColor}50` // 50% opacity
+                }}
                 autoFocus
               />
             ) : (
               <span 
-                className="text-white text-xs cursor-pointer hover:underline"
+                className="text-xs cursor-pointer hover:underline flash-on-group-hover"
+                style={{ color: profileColor }}
                 onClick={() => {
                   setIsEditingProgress(true)
                   setTempProgress(progress.toString())
@@ -190,17 +199,21 @@ export const AnimeCard: React.FC<Props> = ({
                 {progress}
               </span>
             )}
-            <span className="text-white text-xs">/{anime.totalEpisodes || '?'}</span>
+            <span className="text-xs flash-on-group-hover" style={{ color: profileColor }}>
+              /{anime.totalEpisodes || '?'}
+            </span>
             <div className="flex flex-col ml-1 opacity-0 group-hover:opacity-100 duration-150">
               <button
-                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                style={{ color: profileColor }}
                 onClick={() => handleProgressChange(progress + 1)}
                 disabled={loading || (anime.totalEpisodes !== null && progress >= anime.totalEpisodes)}
               >
                 <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
               </button>
               <button
-                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                style={{ color: profileColor }}
                 onClick={() => handleProgressChange(progress - 1)}
                 disabled={loading || progress <= 0}
               >
@@ -213,14 +226,16 @@ export const AnimeCard: React.FC<Props> = ({
           <div className="flex items-center">
             <div className="flex flex-col mr-1 opacity-0 group-hover:opacity-100 duration-150">
               <button
-                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                style={{ color: profileColor }}
                 onClick={() => handleScoreChange(score + 1)}
                 disabled={loading || score >= maxScore}
               >
                 <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
               </button>
               <button
-                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                style={{ color: profileColor }}
                 onClick={() => handleScoreChange(score - 1)}
                 disabled={loading || score <= 0}
               >
@@ -234,12 +249,17 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleScoreInputChange(e.target.value)}
                 onBlur={handleScoreInputBlur}
                 onKeyDown={handleScoreInputKeyDown}
-                className="bg-transparent text-white text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                style={{ 
+                  color: profileColor,
+                  borderBottomColor: `${profileColor}50` // 50% opacity
+                }}
                 autoFocus
               />
             ) : (
               <span 
-                className="text-white text-xs cursor-pointer hover:underline"
+                className="text-xs cursor-pointer hover:underline flash-on-group-hover"
+                style={{ color: profileColor }}
                 onClick={() => {
                   setIsEditingScore(true)
                   setTempScore(score.toString())

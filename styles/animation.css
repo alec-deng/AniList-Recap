@@ -1,0 +1,9 @@
+.group:hover .flash-on-group-hover {
+  animation: flash 0.15s ease;
+}
+
+@keyframes flash {
+  0% { opacity: 1; }
+  50% { opacity: 0.9; }
+  100% { opacity: 1; }
+}

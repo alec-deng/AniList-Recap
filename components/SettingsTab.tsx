@@ -157,14 +157,14 @@ export const SettingsTab: React.FC = () => {
               onClick={() => handleColorChange(option.name)}
               className={`
                 w-8 h-8 rounded-lg border-2 transition-all duration-200 hover:scale-110
-                ${profileColor === option.name 
+                ${profileColor === option.color 
                   ? 'border-white-100 shadow-lg scale-105' 
                   : 'border-white-100/50'
                 }
               `}
               style={{ backgroundColor: option.color }}
             >
-              {profileColor === option.name && (
+              {profileColor === option.color && (
                 <div className="w-1.5 h-1.5 bg-white-100 rounded-full mx-auto"></div>
               )}
             </button>

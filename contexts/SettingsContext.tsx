@@ -1,4 +1,3 @@
-// contexts/SettingsContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useQuery, gql } from "@apollo/client"
 
@@ -45,6 +44,20 @@ interface SettingsContextType {
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
+
+// Color mapping function
+const getColorValue = (color: string): string => {
+  const colorMap: { [key: string]: string } = {
+    'pink': '#e85fb2',
+    'blue': '#3db4f2',
+    'purple': '#b368e6',
+    'green': '#4abd4e',
+    'orange': '#ef881a',
+    'red': '#e13333',
+    'gray': '#677b94',
+  }
+  return colorMap[color] || color
+}
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [profileColor, setProfileColorState] = useState<string>('blue')
@@ -112,7 +125,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   return (
     <SettingsContext.Provider value={{ 
-      profileColor,
+      profileColor: getColorValue(profileColor), // Return the mapped hex color
       titleLanguage,
       displayAdultContent,
       scoreFormat,
