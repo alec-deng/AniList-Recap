@@ -57,6 +57,10 @@ export const AnimeCard: React.FC<Props> = ({
 }) => {
   const [score, setScore] = useState(anime.score)
   const [progress, setProgress] = useState(anime.progress)
+  const [isEditingScore, setIsEditingScore] = useState(false)
+  const [isEditingProgress, setIsEditingProgress] = useState(false)
+  const [tempProgress, setTempProgress] = useState(anime.progress.toString())
+  const [tempScore, setTempScore] = useState(anime.score.toString())
   const maxScore = getMaxScore(scoreFormat)
   const maxEpisodes = anime.totalEpisodes || 999
   
@@ -68,83 +72,180 @@ export const AnimeCard: React.FC<Props> = ({
   const handleScoreChange = (newScore: number) => {
     const clampedScore = Math.min(Math.max(0, newScore), maxScore)
     setScore(clampedScore)
+    setTempScore(clampedScore.toString())
     onScoreChange(clampedScore)
+  }
+
+  const handleScoreInputChange = (value: string) => {
+    setTempScore(value)
+  }
+
+  const handleScoreInputBlur = () => {
+    const numValue = parseFloat(tempScore) || 0
+    const clampedScore = Math.min(Math.max(0, numValue), maxScore)
+    setScore(clampedScore)
+    setTempScore(clampedScore.toString())
+    setIsEditingScore(false)
+    onScoreChange(clampedScore)
+  }
+
+  const handleScoreInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleScoreInputBlur()
+    } else if (e.key === 'Escape') {
+      setTempScore(score.toString())
+      setIsEditingScore(false)
+    }
   }
 
   const handleProgressChange = (newProgress: number) => {
     const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
     setProgress(clampedProgress)
+    setTempProgress(clampedProgress.toString())
     onProgressChange(clampedProgress)
   }
 
-  const isCompleted = anime.totalEpisodes !== null && anime.progress >= anime.totalEpisodes
+  const handleProgressInputChange = (value: string) => {
+    setTempProgress(value)
+  }
+
+  const handleProgressInputBlur = () => {
+    const numValue = parseInt(tempProgress) || 0
+    const clampedProgress = Math.min(Math.max(0, numValue), maxEpisodes)
+    setProgress(clampedProgress)
+    setTempProgress(clampedProgress.toString())
+    setIsEditingProgress(false)
+    onProgressChange(clampedProgress)
+  }
+
+  const handleProgressInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleProgressInputBlur()
+    } else if (e.key === 'Escape') {
+      setTempProgress(progress.toString())
+      setIsEditingProgress(false)
+    }
+  }
+
+  // Show completion button only when progress equals total episodes
+  const showCompletionButton = manualCompletion && anime.totalEpisodes !== null && progress >= anime.totalEpisodes
 
   return (
-    <div className="flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-3">
-      {/* Header with cover and title */}
-      <div className="flex gap-3 mb-3">
-        <img 
-          src={anime.cover} 
-          alt={anime.title} 
-          className="w-16 h-20 object-cover rounded flex-shrink-0" 
-        />
-        <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
-            {anime.title}
-          </h4>
-          <div className="text-xs text-gray-500 space-y-1">
-            <div>Progress: {anime.progress}/{anime.totalEpisodes || '?'}</div>
-            <div>Score: {formatScore(anime.score, scoreFormat)}/{maxScore}</div>
+    <div 
+      className="relative w-full aspect-[3/4] overflow-hidden transition-all duration-200 group"
+      style={{
+        backgroundImage: `url(${anime.cover})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Completion button - top center, show on hover */}
+      {showCompletionButton && (
+        <div className="absolute top-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            className="w-full bg-green-500 group-hover:bg-green text-white px-2 py-1 rounded text-xs font-medium shadow-lg"
+            onClick={onMarkCompleted}
+            disabled={loading}
+          >
+            Mark as Completed
+          </button>
+        </div>
+      )}
+
+      {/* Full bottom overlay covering all content */}
+      <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-3">
+        {/* Title */}
+        <h4 className="text-white font-medium text-xs leading-tight mb-1">
+          {anime.title}
+        </h4>
+        
+        {/* Progress and Score row */}
+        <div className="flex items-center justify-between">
+          {/* Progress section - aligned left */}
+          <div className="flex items-center">
+            {isEditingProgress ? (
+              <input
+                type="text"
+                value={tempProgress}
+                onChange={(e) => handleProgressInputChange(e.target.value)}
+                onBlur={handleProgressInputBlur}
+                onKeyDown={handleProgressInputKeyDown}
+                className="bg-transparent text-white text-xs w-6 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                autoFocus
+              />
+            ) : (
+              <span 
+                className="text-white text-xs cursor-pointer hover:underline"
+                onClick={() => {
+                  setIsEditingProgress(true)
+                  setTempProgress(progress.toString())
+                }}
+              >
+                {progress}
+              </span>
+            )}
+            <span className="text-white text-xs">/{anime.totalEpisodes || '?'}</span>
+            <div className="flex flex-col ml-1 opacity-0 group-hover:opacity-100 duration-150">
+              <button
+                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                onClick={() => handleProgressChange(progress + 1)}
+                disabled={loading || (anime.totalEpisodes !== null && progress >= anime.totalEpisodes)}
+              >
+                <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
+              </button>
+              <button
+                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                onClick={() => handleProgressChange(progress - 1)}
+                disabled={loading || progress <= 0}
+              >
+                <span className="scale-x-[0.90] scale-y-[0.75]">▼</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Score section - aligned right */}
+          <div className="flex items-center">
+            <div className="flex flex-col mr-1 opacity-0 group-hover:opacity-100 duration-150">
+              <button
+                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                onClick={() => handleScoreChange(score + 1)}
+                disabled={loading || score >= maxScore}
+              >
+                <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
+              </button>
+              <button
+                className="text-white text-xs w-4 h-3 flex items-center justify-center leading-none"
+                onClick={() => handleScoreChange(score - 1)}
+                disabled={loading || score <= 0}
+              >
+                <span className="scale-x-[0.90] scale-y-[0.75]">▼</span>
+              </button>
+            </div>
+            {isEditingScore ? (
+              <input
+                type="text"
+                value={tempScore}
+                onChange={(e) => handleScoreInputChange(e.target.value)}
+                onBlur={handleScoreInputBlur}
+                onKeyDown={handleScoreInputKeyDown}
+                className="bg-transparent text-white text-xs w-6 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                autoFocus
+              />
+            ) : (
+              <span 
+                className="text-white text-xs cursor-pointer hover:underline"
+                onClick={() => {
+                  setIsEditingScore(true)
+                  setTempScore(score.toString())
+                }}
+              >
+                {formatScore(score, scoreFormat)}
+              </span>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Progress Controls */}
-      <div className="flex items-center gap-2 mb-3">
-        <input
-          type="number"
-          min={0}
-          max={maxEpisodes}
-          value={progress}
-          onChange={(e) => handleProgressChange(Number(e.target.value))}
-          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs text-center"
-          disabled={loading}
-        />
-      </div>
-
-      {/* Score Controls */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-gray-600 w-10">Score:</span>
-        <input
-          type="number"
-          min={0}
-          max={maxScore}
-          step={scoreFormat === 'POINT_10_DECIMAL' ? 0.1 : 1}
-          value={score}
-          onChange={(e) => handleScoreChange(Number(e.target.value))}
-          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs text-center"
-          disabled={loading}
-        />
-        <span className="text-xs text-gray-500">/{maxScore}</span>
-      </div>
-
-      {/* Manual Completion Button */}
-      {manualCompletion && (
-        <button
-          className="w-full px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium disabled:opacity-50"
-          onClick={onMarkCompleted}
-          disabled={loading}
-        >
-          Mark as Completed
-        </button>
-      )}
-
-      {/* Completion Status */}
-      {isCompleted && (
-        <div className="text-xs text-green-600 font-medium text-center mt-2">
-          ✓ Completed
-        </div>
-      )}
     </div>
   )
 }

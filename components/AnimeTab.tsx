@@ -31,7 +31,7 @@ const WATCHING_LIST_QUERY = gql`
               episode
             }
             coverImage {
-              medium
+              large
             }
             episodes
             isAdult
@@ -138,7 +138,7 @@ export const AnimeTab: React.FC = () => {
   const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
     id: entry.id,
     title: getTitle(entry.media.title),
-    cover: entry.media.coverImage.medium,
+    cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
     nextAiringEpisode: entry.media.nextAiringEpisode.episode,
@@ -210,7 +210,7 @@ export const AnimeTab: React.FC = () => {
       <h3 className="text-lg text-gray font-medium mb-2">
         {title} ({animeList.length})
       </h3>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {animeList.map((anime) => (
           <AnimeCard
             key={anime.id}

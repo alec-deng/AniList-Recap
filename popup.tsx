@@ -25,7 +25,7 @@ function Popup() {
   return (
     <ApolloProvider client={client}>
       <SettingsProvider>
-        <div className="w-[400px] min-h-[400px]">
+        <div className="w-[500px] min-h-[400px]">
           <div className="flex items-center space-x-4 justify-start mb-2 bg-[#1d2033] pt-10 pr-8 pl-10">
             {avatar && (
               <img src={avatar} alt="Avatar" className="w-16 h-16"/>
