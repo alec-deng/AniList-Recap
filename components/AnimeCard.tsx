@@ -32,19 +32,6 @@ const getMaxScore = (format: string): number => {
   }
 }
 
-const formatScore = (score: number, format: string): string => {
-  if (score === 0) return '0'
-  
-  switch (format) {
-    case 'POINT_100': return score.toString()
-    case 'POINT_10_DECIMAL': return score.toFixed(1)
-    case 'POINT_10': return Math.round(score).toString()
-    case 'POINT_5': return Math.round(score).toString()
-    case 'POINT_3': return Math.round(score).toString()
-    default: return score.toString()
-  }
-}
-
 export const AnimeCard: React.FC<Props> = ({
   anime,
   onScoreChange, 
@@ -81,12 +68,21 @@ export const AnimeCard: React.FC<Props> = ({
   }
 
   const handleScoreInputBlur = () => {
-    const numValue = parseFloat(tempScore) || 0
-    const clampedScore = Math.min(Math.max(0, numValue), maxScore)
-    setScore(clampedScore)
-    setTempScore(clampedScore.toString())
+    const numValue = parseFloat(tempScore)
+    
+    // Check if it's a valid number and within range
+    if (isNaN(numValue) || numValue < 0 || numValue > maxScore) {
+      // Invalid input - revert to current score
+      setTempScore(score.toString())
+      setIsEditingScore(false)
+      return
+    }
+    
+    // Valid input - update the score (let AniList handle formatting)
+    setScore(numValue)
+    setTempScore(numValue.toString())
     setIsEditingScore(false)
-    onScoreChange(clampedScore)
+    onScoreChange(numValue)
   }
 
   const handleScoreInputKeyDown = (e: React.KeyboardEvent) => {
@@ -110,12 +106,21 @@ export const AnimeCard: React.FC<Props> = ({
   }
 
   const handleProgressInputBlur = () => {
-    const numValue = parseInt(tempProgress) || 0
-    const clampedProgress = Math.min(Math.max(0, numValue), maxEpisodes)
-    setProgress(clampedProgress)
-    setTempProgress(clampedProgress.toString())
+    const numValue = parseInt(tempProgress)
+    
+    // Check if it's a valid integer and within range
+    if (isNaN(numValue) || numValue < 0 || numValue > maxEpisodes || !Number.isInteger(parseFloat(tempProgress))) {
+      // Invalid input - revert to current progress
+      setTempProgress(progress.toString())
+      setIsEditingProgress(false)
+      return
+    }
+    
+    // Valid input - update the progress
+    setProgress(numValue)
+    setTempProgress(numValue.toString())
     setIsEditingProgress(false)
-    onProgressChange(clampedProgress)
+    onProgressChange(numValue)
   }
 
   const handleProgressInputKeyDown = (e: React.KeyboardEvent) => {
@@ -171,7 +176,7 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleProgressInputChange(e.target.value)}
                 onBlur={handleProgressInputBlur}
                 onKeyDown={handleProgressInputKeyDown}
-                className="bg-transparent text-white text-xs w-6 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-white text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 autoFocus
               />
             ) : (
@@ -229,7 +234,7 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleScoreInputChange(e.target.value)}
                 onBlur={handleScoreInputBlur}
                 onKeyDown={handleScoreInputKeyDown}
-                className="bg-transparent text-white text-xs w-6 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-white text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 autoFocus
               />
             ) : (
@@ -240,7 +245,7 @@ export const AnimeCard: React.FC<Props> = ({
                   setTempScore(score.toString())
                 }}
               >
-                {formatScore(score, scoreFormat)}
+                {score}
               </span>
             )}
           </div>
