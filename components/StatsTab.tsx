@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react"
 import { useQuery, gql } from "@apollo/client"
+import { useSettings } from "../contexts/SettingsContext"
 import { ScoreChart } from "./ScoreChart"
 import * as Slider from "@radix-ui/react-slider"
 
@@ -30,9 +31,20 @@ const VIEWER_QUERY = gql`
   }
 `
 
-const seasons = ["Winter", "Spring", "Summer", "Fall"]
+const seasons = [
+  { name: "Winter", value: "WINTER" },
+  { name: "Spring", value: "SPRING" },
+  { name: "Summer", value: "SUMMER" },
+  { name: "Fall", value: "FALL" }
+]
 
 export const StatsTab: React.FC = () => {
+  const { 
+    profileColor,
+    displayAdultContent,
+    scoreFormat
+  } = useSettings()
+
   const { data: viewerData } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
@@ -97,9 +109,9 @@ export const StatsTab: React.FC = () => {
           value={season}
           onChange={e => setSeason(e.target.value)}
         >
-          <option value="All">All Seasons</option>
+          <option value="All">Any</option>
           {seasons.map(s => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s.value} value={s.value}>{s.name}</option>
           ))}
         </select>
       </div>
