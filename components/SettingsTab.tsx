@@ -2,6 +2,7 @@ import React from "react"
 import { useMutation, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAuth } from "../hooks/useAuth"
+import { CustomSelect } from './CustomSelect'
 
 const UPDATE_PROFILE_COLOR = gql`
   mutation ($profileColor: String) {
@@ -150,7 +151,7 @@ export const SettingsTab: React.FC = () => {
       {/* Profile Color */}
       <div>
         <h3 className="text-sm font-medium mb-2 text-gray">Profile Color</h3>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-2 ml-2">
           {colorOptions.map((option) => (
             <button
               key={option.name}
@@ -172,49 +173,55 @@ export const SettingsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Title Language */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Title Language</h3>
-        <select 
-          value={titleLanguage}
-          onChange={(e) => handleLanguageChange(e.target.value)}
-          className="w-full p-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue"
-        >
-          <option value="ROMAJI">Romaji (Sousou no Frieren)</option>
-          <option value="ENGLISH">English (Frieren: Beyond Journey’s End)</option>
-          <option value="NATIVE">Native (葬送のフリーレン)</option>
-        </select>
-      </div>
-
       {/* Score Format */}
       <div>
         <h3 className="text-sm font-medium mb-2 text-gray">Scoring System</h3>
-        <select 
+        <CustomSelect
+          options={[
+            { name: "100 Point (55/100)", value: "POINT_100" },
+            { name: "10 Point Decimal (5.5/10)", value: "POINT_10_DECIMAL" },
+            { name: "10 Point (5/10)", value: "POINT_10" },
+            { name: "5 Star (3/5)", value: "POINT_5" },
+            { name: "3 Point Smiley :)", value: "POINT_3" }
+          ]}
           value={scoreFormat}
-          onChange={(e) => handleScoreFormatChange(e.target.value)}
-          className="w-full p-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue"
-        >
-          <option value="POINT_100">100 Point (55/100)</option>
-          <option value="POINT_10_DECIMAL">10 Point Decimal (5.5/10)</option>
-          <option value="POINT_10">10 Point (5/10)</option>
-          <option value="POINT_5">5 Star (3/5)</option>
-          <option value="POINT_3">3 Point Smiley :)</option>
-        </select>
+          onChange={handleScoreFormatChange}
+          profileColor={profileColor}
+          className="w-full"
+        />
       </div>
 
       {/* Row Order */}
       <div>
         <h3 className="text-sm font-medium mb-2 text-gray">Default List Order</h3>
-        <select 
+        <CustomSelect
+          options={[
+            { name: "Score", value: "score" },
+            { name: "Title", value: "title" },
+            { name: "Last Updated", value: "updatedAt" },
+            { name: "Last Added", value: "id" }
+          ]}
           value={rowOrder}
-          onChange={(e) => handleRowOrderChange(e.target.value)}
-          className="w-full p-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue"
-        >
-          <option value="score">Score</option>
-          <option value="title">Title</option>
-          <option value="updatedAt">Last Updated</option>
-          <option value="id">Last Added</option>
-        </select>
+          onChange={handleRowOrderChange}
+          profileColor={profileColor}
+          className="w-full"
+        />
+      </div>
+
+      {/* Title Language */}
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-gray">Title Language</h3>
+        <CustomSelect
+          options={[
+            { name: "Romaji (Sousou no Frieren)", value: "ROMAJI" },
+            { name: "English (Frieren: Beyond Journey's End)", value: "ENGLISH" },
+            { name: "Native (葬送のフリーレン)", value: "NATIVE" }
+          ]}
+          value={titleLanguage}
+          onChange={handleLanguageChange}
+          profileColor={profileColor}
+          className="w-full"
+        />
       </div>
 
       {/* Manual Completion */}
