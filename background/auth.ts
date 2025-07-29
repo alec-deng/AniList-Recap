@@ -1,8 +1,9 @@
 import AniList from "./anilist";
 import Storage from "./storage";
+import { AUTH_CONFIG } from "../config/auth.config";
 
 export default class Auth {
-  static CLIENT_ID = 24586;
+  static CLIENT_ID = AUTH_CONFIG.clientId;
 
   // Initiates the OAuth login flow.
   static async login() {
