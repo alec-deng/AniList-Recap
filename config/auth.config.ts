@@ -1,3 +1,3 @@
 export const AUTH_CONFIG = {
-  clientId: 'YOUR_CLIENT_ID_HERE'
+  clientId: 24586, // AniList client ID
 }
