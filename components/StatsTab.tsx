@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
 import { ScoreChart } from "./ScoreChart"
@@ -12,6 +12,7 @@ const COMPLETED_LIST_QUERY = gql`
           media {
             season
             seasonYear
+            isAdult
             title {
               romaji
             }
@@ -48,7 +49,7 @@ export const StatsTab: React.FC = () => {
   const { data: viewerData } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
-  const { data, loading, error } = useQuery(COMPLETED_LIST_QUERY, {
+  const { data, loading, error} = useQuery(COMPLETED_LIST_QUERY, {
     variables: { userId },
     skip: !userId
   })
@@ -67,14 +68,25 @@ export const StatsTab: React.FC = () => {
   const [year, setYear] = useState<number | null>(null)
   const [season, setSeason] = useState<string>("All")
 
-  // Filtered entries
+  // Filtered entries by adult content, year, and season
   const filtered = useMemo(() => {
     return entries.filter((e: any) => {
       const matchYear = year ? e.media.seasonYear === year : true
       const matchSeason = season !== "All" ? e.media.season === season : true
-      return matchYear && matchSeason
+      const matchAdult = displayAdultContent ? true : !e.media.isAdult
+      return matchYear && matchSeason && matchAdult
     })
-  }, [entries, year, season])
+  }, [entries, year, season, scoreFormat, displayAdultContent])
+
+  // total watched count (filtered)
+  const totalWatched = useMemo(() => filtered.length || 0, [filtered])
+
+  // mean score
+  const meanScore = useMemo(() => {
+    if (totalWatched === 0) return 0
+    const totalScore = filtered.reduce((sum: number, e: any) => sum + (e.score || 0), 0)
+    return totalScore / totalWatched
+  }, [filtered])
 
   // Score distribution
   const scoreData = useMemo(() => {
@@ -91,7 +103,7 @@ export const StatsTab: React.FC = () => {
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4 text-red-500">Error loading stats.</div>
 
-  return (
+    return (
     <div className="p-2">
       <div className="mb-2 flex items-center gap-2">
         <span className="text-sm">Year:</span>
@@ -115,6 +127,33 @@ export const StatsTab: React.FC = () => {
           ))}
         </select>
       </div>
+
+      {/* Stats Display Section */}
+      <div className="mb-4 flex justify-center gap-8 p-4 border rounded-lg bg-gray-50">
+        <div className="text-center">
+          <div 
+            className="text-2xl font-bold mb-1"
+            style={{ color: profileColor }}
+          >
+            {totalWatched}
+          </div>
+          <div className="text-sm text-gray-600 uppercase tracking-wide">
+            Total Watched
+          </div>
+        </div>
+        <div className="text-center">
+          <div 
+            className="text-2xl font-bold mb-1"
+            style={{ color: profileColor }}
+          >
+            {meanScore.toFixed(1)}
+          </div>
+          <div className="text-sm text-gray-600 uppercase tracking-wide">
+            Mean Score
+          </div>
+        </div>
+      </div>
+
       <ScoreChart data={scoreData} />
     </div>
   )
