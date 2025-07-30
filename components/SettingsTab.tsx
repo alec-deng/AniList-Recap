@@ -3,6 +3,7 @@ import { useMutation, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAuth } from "../hooks/useAuth"
 import { CustomSelect } from './CustomSelect'
+import { CustomCheckbox } from './CustomCheckbox'
 
 const UPDATE_PROFILE_COLOR = gql`
   mutation ($profileColor: String) {
@@ -226,48 +227,43 @@ export const SettingsTab: React.FC = () => {
 
       {/* Manual Completion */}
       <div>
-        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={manualCompletion}
-            onChange={(e) => handleManualCompletionChange(e.target.checked)}
-            className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
-          />
-          <span className="text-sm text-gray">Manually Mark As Completed</span>
-        </label>
+        <CustomCheckbox
+          checked={manualCompletion}
+          onChange={handleManualCompletionChange}
+          label="Manually Mark As Completed"
+          profileColor={profileColor}
+          className="space-x-1 text-sm text-gray"
+        />
       </div>
 
       {/* Separate Entries */}
       <div>
-        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={separateEntries}
-            onChange={(e) => handleSeparateEntriesChange(e.target.checked)}
-            className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
-          />
-          <span className="text-sm text-gray">Separate Caught-Up Entries</span>
-        </label>
+        <CustomCheckbox
+          checked={separateEntries}
+          onChange={handleSeparateEntriesChange}
+          label="Separate Caught-Up Entries"
+          profileColor={profileColor}
+          className="space-x-1 text-sm text-gray"
+        />
       </div>
 
       {/* Adult Content */}
       <div>
-        <label className="flex items-center pl-1 space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={displayAdultContent}
-            onChange={(e) => handleAdultContentChange(e.target.checked)}
-            className="w-4 h-4 text-blue border-gray/30 rounded focus:ring-blue focus:ring-2"
-          />
-          <span className="text-sm text-gray">18+ Content</span>
-        </label>
+        <CustomCheckbox
+          checked={displayAdultContent}
+          onChange={handleAdultContentChange}
+          label="Display 18+ Content"
+          profileColor={profileColor}
+          className="space-x-1 text-sm text-gray"
+        />
       </div>
 
       {/* Logout */}
       <div className="pt-1 flex items-center justify-between">
         <button
           onClick={logout}
-          className="w-16 h-8 bg-blue text-white-100 rounded-lg text-sm font-medium hover:bg-[#36a3dd] duration-200"
+          className="w-16 h-8 text-white-100 rounded-lg text-sm font-medium"
+          style={{ backgroundColor: profileColor }}
         >
           Logout
         </button>

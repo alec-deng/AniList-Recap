@@ -8,7 +8,7 @@ import { StatsTab } from "./components/StatsTab"
 import { SettingsTab } from "./components/SettingsTab"
 import { LoginPage } from "./components/LoginPage"
 import { useAuth } from "./hooks/useAuth"
-import { ExternalLink } from "lucide-react"
+import { SquareArrowOutUpRight  } from "lucide-react"
 import "./styles/popup.css"
 
 const TAB_NAMES = ["Anime List", "Stats", "Settings"]
@@ -46,7 +46,7 @@ function PopupContent() {
           style={{ '--profile-color': profileColor } as React.CSSProperties}
         >
           <span className="text-sm font-medium">AniList</span>
-          <ExternalLink 
+          <SquareArrowOutUpRight  
             className="group-hover:[color:var(--profile-color)] transition-colors duration-200" 
             size={16} 
           />

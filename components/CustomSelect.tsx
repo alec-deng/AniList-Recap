@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-interface LanguageOption {
+interface Option {
   value: string;
   name: string;
 }
 
 interface CustomSelectProps {
-  options: LanguageOption[];
+  options: Option[];
   value: string;
   onChange: (value: string) => void;
   profileColor: string;
@@ -21,6 +21,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   profileColor = "#3db4f2"
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(option => option.value === value);
@@ -47,7 +48,12 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none focus:border-blue text-left flex items-center justify-between"
+        className="w-full px-3 py-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none text-left flex items-center justify-between"
+        style={{
+          borderColor: isFocused ? profileColor : undefined
+        }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       >
         <span>
           {selectedOption ? selectedOption.name : 'Select language'}
