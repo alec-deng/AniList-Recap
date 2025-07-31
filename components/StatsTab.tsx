@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
 import { ScoreChart } from "./ScoreChart"
+import { MonitorCheck, Percent } from 'lucide-react';
 import * as Slider from "@radix-ui/react-slider"
 
 const COMPLETED_LIST_QUERY = gql`
@@ -123,7 +124,55 @@ export const StatsTab: React.FC = () => {
 
     return (
     <div className="p-2">
-      <div className="mb-2 flex items-center gap-2">
+
+      {/* Stats Display Section */}
+      <div className="flex justify-center gap-20 m-4">
+
+        {/* Total Anime */}
+        <div className="flex space-x-4 items-center justify-center">
+          <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg ">
+            <MonitorCheck
+              size={20}
+              className="text-gray"
+            />
+          </div>
+          <div className="text-start">
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: profileColor }}
+            >
+              {totalWatched}
+            </div>
+            <div className="text-sm text-gray tracking-wide font-semibold">
+              Total Anime
+            </div>
+          </div>
+        </div>
+
+        {/* Mean Score */}
+        <div className="flex space-x-4 items-center justify-center">
+          <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg ">
+            <Percent
+              size={20}
+              className="text-gray"
+            />
+          </div>
+          <div className="text-start">
+            <div 
+              className="text-2xl font-bold"
+              style={{ color: profileColor }}
+            >
+              {meanScore.toFixed(2)}
+            </div>
+            <div className="text-sm text-gray tracking-wide font-semibold">
+              Mean Score
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="pl-6 pr-6 flex justify-between items-center">
         <span className="text-sm">Year:</span>
         <Slider.Root
           className="w-32 h-4"
@@ -145,33 +194,8 @@ export const StatsTab: React.FC = () => {
           ))}
         </select>
       </div>
-
-      {/* Stats Display Section */}
-      <div className="mb-4 flex justify-center gap-8 p-4 border rounded-lg bg-gray-50">
-        <div className="text-center">
-          <div 
-            className="text-2xl font-bold mb-1"
-            style={{ color: profileColor }}
-          >
-            {totalWatched}
-          </div>
-          <div className="text-sm text-gray-600 uppercase tracking-wide">
-            Total Watched
-          </div>
-        </div>
-        <div className="text-center">
-          <div 
-            className="text-2xl font-bold mb-1"
-            style={{ color: profileColor }}
-          >
-            {meanScore.toFixed(1)}
-          </div>
-          <div className="text-sm text-gray-600 uppercase tracking-wide">
-            Mean Score
-          </div>
-        </div>
-      </div>
-
+      
+      {/* Score Chart */}
       <ScoreChart data={scoreData} allScores={allScores} />
     </div>
   )
