@@ -56,7 +56,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         onBlur={() => setIsFocused(false)}
       >
         <span>
-          {selectedOption ? selectedOption.name : 'Select language'}
+          {selectedOption ? selectedOption.name : ''}
         </span>
         
         {/* Dropdown arrow */}

@@ -116,7 +116,7 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
                 axisLine={false}
                 tickLine={false}
                 width={0}
-                domain={[0, maxCount + Math.ceil(maxCount * 0.15)]}
+                domain={[0, maxCount + Math.ceil(maxCount * 0.2)]}
               />
               <Bar 
                 dataKey="count" 
@@ -124,9 +124,11 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
                 maxBarSize={25}
                 radius={[5, 5, 0, 0]}
               >
-                <LabelList 
+                <LabelList
                   dataKey="count" 
                   position="top"
+                  offset={10}
+                  textAnchor="middle"
                   formatter={(value: any) => value > 0 ? value : ''}
                   style={{ fill: '#5c728a', fontSize: 12, fontWeight: 'bold' }}
                 />

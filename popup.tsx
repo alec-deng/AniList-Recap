@@ -26,7 +26,7 @@ function PopupContent() {
 
   return (
     <div className="w-[500px] min-h-[400px]">
-      <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#242538]">
+      <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#12162a]">
         {/* Avatar and Username */}
         <div className="flex items-center space-x-4">
           {avatar && (
