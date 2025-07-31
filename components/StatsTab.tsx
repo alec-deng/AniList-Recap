@@ -49,12 +49,30 @@ export const StatsTab: React.FC = () => {
   const { data: viewerData } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
-  const { data, loading, error} = useQuery(COMPLETED_LIST_QUERY, {
+  const { data, loading, error, refetch} = useQuery(COMPLETED_LIST_QUERY, {
     variables: { userId },
     skip: !userId
   })
+    
+  // Force refetch when settings changes
+  useEffect(() => {
+    if (userId) {
+      refetch()
+    }
+  }, [scoreFormat, displayAdultContent, userId, refetch])
 
   const entries = data?.MediaListCollection?.lists?.[0]?.entries ?? []
+
+  // Score distribution
+  const allScores = useMemo(() => {
+  const scores: Record<number, boolean> = {}
+  entries.forEach((entry: any) => {
+    if (entry.score) {
+      scores[entry.score] = true
+    }
+  })
+  return Object.keys(scores).map(score => Number(score)).sort((a, b) => a - b)
+  }, [entries])
 
   // Extract years
   const years = useMemo(() => {
@@ -154,7 +172,7 @@ export const StatsTab: React.FC = () => {
         </div>
       </div>
 
-      <ScoreChart data={scoreData} />
+      <ScoreChart data={scoreData} allScores={allScores} />
     </div>
   )
 }
