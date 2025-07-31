@@ -35,16 +35,17 @@ const VIEWER_QUERY = gql`
   }
 `
 
-const seasons = [
-
-]
-
 export const StatsTab: React.FC = () => {
   const { 
     profileColor,
     displayAdultContent,
     scoreFormat
   } = useSettings()
+
+  const [year, setYear] = useState<number | null>(null)
+  const [sliderValue, setSliderValue] = useState<number>(0)
+  const [season, setSeason] = useState<string>("All")
+  const [isSliderActive, setIsSliderActive] = useState(false);
 
   const { data: viewerData } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
@@ -82,10 +83,6 @@ export const StatsTab: React.FC = () => {
     })
     return Array.from(set).sort((a, b) => a - b)
   }, [entries])
-
-  const [year, setYear] = useState<number | null>(null)
-  const [sliderValue, setSliderValue] = useState<number>(0)
-  const [season, setSeason] = useState<string>("All")
 
   // Filtered entries by adult content, year, and season
   const filtered = useMemo(() => {
@@ -126,7 +123,7 @@ export const StatsTab: React.FC = () => {
     <div className="p-2">
 
       {/* Stats Display Section */}
-      <div className="flex justify-center gap-20 m-4">
+      <div className="flex justify-center gap-[114px] m-4 -translate-x-2">
 
         {/* Total Anime */}
         <div className="flex space-x-4 items-center justify-center">
@@ -209,6 +206,8 @@ export const StatsTab: React.FC = () => {
               setYear(selectedYear)
             }
           }}
+          onPointerDown={() => setIsSliderActive(true)}
+          onPointerUp={() => setIsSliderActive(false)}
         >
           <Slider.Track className="bg-white-100 relative grow rounded-full h-1.5">
             <Slider.Range className="absolute rounded-full h-full" 
@@ -219,7 +218,9 @@ export const StatsTab: React.FC = () => {
             style={{ borderColor: profileColor }}
             aria-label="Year"
           >
-            <div className="flex items-center justify-center absolute min-w-14 min-h-8 -top-10 left-1/2 transform -translate-x-1/2 bg-[#242538] text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+            <div className={`flex items-center justify-center absolute min-w-14 min-h-8 -top-10 left-1/2 transform -translate-x-1/2 bg-[#242538] text-white text-xs px-2 py-1 rounded transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10
+              ${isSliderActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+              }>
               {sliderValue === 0 ? "All Years" : years[sliderValue - 1]}
             </div>
           </Slider.Thumb>
@@ -227,8 +228,8 @@ export const StatsTab: React.FC = () => {
       </div>
 
       {/* Season Section */}
-      <div className="ml-10 min-w-[100px]">
-        <h3 className="text-sm font-medium mb-2 text-gray">Season</h3>
+      <div className="ml-10 min-w-[170px]">
+        <h3 className="text-sm font-medium mb-2 text-gray ml-1">Season</h3>
         <CustomSelect
           options={[
             {name: "Any", value: "All"},
@@ -240,7 +241,7 @@ export const StatsTab: React.FC = () => {
           value={season}
           onChange={setSeason}
           profileColor={profileColor}
-          className="w-full [&>button]:py-1 [&>button]:-ml-1"
+          className="w-full [&>button]:py-1"
         />
       </div>
     </div>
