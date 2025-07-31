@@ -2,7 +2,9 @@ import React, { useMemo, useState, useEffect } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
 import { ScoreChart } from "./ScoreChart"
+import { CustomSelect } from "./CustomSelect"
 import { MonitorCheck, Percent } from 'lucide-react';
+import CancelIcon from '@mui/icons-material/Cancel';
 import * as Slider from "@radix-ui/react-slider"
 
 const COMPLETED_LIST_QUERY = gql`
@@ -33,19 +35,17 @@ const VIEWER_QUERY = gql`
   }
 `
 
-const seasons = [
-  { name: "Winter", value: "WINTER" },
-  { name: "Spring", value: "SPRING" },
-  { name: "Summer", value: "SUMMER" },
-  { name: "Fall", value: "FALL" }
-]
-
 export const StatsTab: React.FC = () => {
   const { 
     profileColor,
     displayAdultContent,
     scoreFormat
   } = useSettings()
+
+  const [year, setYear] = useState<number | null>(null)
+  const [sliderValue, setSliderValue] = useState<number>(0)
+  const [season, setSeason] = useState<string>("All")
+  const [isSliderActive, setIsSliderActive] = useState(false);
 
   const { data: viewerData } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
@@ -83,9 +83,6 @@ export const StatsTab: React.FC = () => {
     })
     return Array.from(set).sort((a, b) => a - b)
   }, [entries])
-
-  const [year, setYear] = useState<number | null>(null)
-  const [season, setSeason] = useState<string>("All")
 
   // Filtered entries by adult content, year, and season
   const filtered = useMemo(() => {
@@ -126,7 +123,7 @@ export const StatsTab: React.FC = () => {
     <div className="p-2">
 
       {/* Stats Display Section */}
-      <div className="flex justify-center gap-20 m-4">
+      <div className="flex justify-center gap-[114px] m-4 -translate-x-2">
 
         {/* Total Anime */}
         <div className="flex space-x-4 items-center justify-center">
@@ -172,31 +169,87 @@ export const StatsTab: React.FC = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="pl-6 pr-6 flex justify-between items-center">
-        <span className="text-sm">Year:</span>
+      <div className="pl-6 pr-6 flex justify-between items-start">
+      {/* Year Section */}
+      <div className="flex-1">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm font-medium text-gray">Year</span>
+          {year && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                    setYear(null)
+                    setSliderValue(0)
+                  }
+                }
+                className="text-gray leading-none"
+              >
+                <CancelIcon sx={{ fontSize: '1rem' }}/>
+              </button>
+              <span className="text-medium text-gray">{year}</span>
+            </div>
+          )}
+        </div>
         <Slider.Root
-          className="w-32 h-4"
-          min={years[0] ?? 2000}
-          max={years[years.length - 1] ?? 2025}
+          className="relative flex items-center select-none touch-none w-full h-8"
+          min={0}
+          max={years.length}
           step={1}
-          value={year ? [year] : [years[0] ?? 2000]}
-          onValueChange={v => setYear(v[0])}
-        />
-        <span className="text-xs">{year ?? "All"}</span>
-        <select
-          className="ml-2 border rounded px-2 py-1 text-sm"
-          value={season}
-          onChange={e => setSeason(e.target.value)}
+          value={[sliderValue]}
+          onValueChange={(values) => {
+            const yearIndex = values[0]
+            setSliderValue(yearIndex)
+            if (yearIndex == 0) {
+              setYear(null)
+            } else {
+              const selectedYear = years[yearIndex - 1]
+              setYear(selectedYear)
+            }
+          }}
+          onPointerDown={() => setIsSliderActive(true)}
+          onPointerUp={() => setIsSliderActive(false)}
         >
-          <option value="All">Any</option>
-          {seasons.map(s => (
-            <option key={s.value} value={s.value}>{s.name}</option>
-          ))}
-        </select>
+          <Slider.Track className="bg-white-100 relative grow rounded-full h-1.5">
+            <Slider.Range className="absolute rounded-full h-full" 
+              style={{ background: profileColor }}/>
+          </Slider.Track>
+          <Slider.Thumb 
+            className="block relative w-4 h-4 bg-white-100 shadow-lg border-2 rounded-full hover:w-5 hover:h-5 transition-all duration-200 ease-in-out cursor-pointer group"
+            style={{ borderColor: profileColor }}
+            aria-label="Year"
+          >
+            <div className={`flex items-center justify-center absolute min-w-14 min-h-8 -top-10 left-1/2 transform -translate-x-1/2 bg-[#242538] text-white text-xs px-2 py-1 rounded transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10
+              ${isSliderActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
+              }>
+              {sliderValue === 0 ? "All Years" : years[sliderValue - 1]}
+            </div>
+          </Slider.Thumb>
+        </Slider.Root>
       </div>
+
+      {/* Season Section */}
+      <div className="ml-10 min-w-[170px]">
+        <h3 className="text-sm font-medium mb-2 text-gray ml-1">Season</h3>
+        <CustomSelect
+          options={[
+            {name: "Any", value: "All"},
+            { name: "Winter", value: "WINTER" },
+            { name: "Spring", value: "SPRING" },
+            { name: "Summer", value: "SUMMER" },
+            { name: "Fall", value: "FALL" }
+          ]}
+          value={season}
+          onChange={setSeason}
+          profileColor={profileColor}
+          className="w-full [&>button]:py-1"
+        />
+      </div>
+    </div>
       
       {/* Score Chart */}
-      <ScoreChart data={scoreData} allScores={allScores} />
+      <div className="-mt-2">
+        <ScoreChart data={scoreData} allScores={allScores} />
+      </div>
     </div>
   )
 }
