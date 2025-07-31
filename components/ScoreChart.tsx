@@ -1,10 +1,78 @@
 import React from "react"
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LabelList } from "recharts"
+import { Star, Frown, Meh, Smile } from "lucide-react"
 import { useSettings } from "../contexts/SettingsContext"
 
 type Props = {
   data: { score: number; count: number }[]
   allScores: number[]
+}
+
+// Custom tick component for X-axis
+const CustomXAxisTick = ({ x, y, payload, scoreFormat }: any) => {
+  const score = parseInt(payload.value)
+  
+  if (scoreFormat === 'POINT_5') {
+    // Show stars for POINT_5 format
+    return (
+      <g transform={`translate(${x},${y})`}>
+        {[...Array(5)].map((_, index) => (
+          <Star
+            key={index}
+            size={12}
+            x={-30 + (index * 12)}
+            y={0}
+            fill={index < score ? '#fbbf24' : 'none'}
+            strokeWidth={0.6}
+          />
+        ))}
+      </g>
+    )
+  } else if (scoreFormat === 'POINT_3') {
+    // Show emoji-style icons for POINT_3 format
+    let IconComponent
+    
+    switch (score) {
+      case 1:
+        IconComponent = Frown
+        break
+      case 2:
+        IconComponent = Meh
+        break
+      case 3:
+        IconComponent = Smile
+        break
+      default:
+        IconComponent = Meh
+    }
+    
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <IconComponent
+          size={16}
+          x={-8}
+          y={-2}
+        />
+      </g>
+    )
+  } else {
+    // Default numeric display
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={0}
+          y={0}
+          dy={10}
+          textAnchor="middle"
+          fill="#5c728a"
+          fontSize={12}
+          fontWeight="bold"
+        >
+          {payload.value}
+        </text>
+      </g>
+    )
+  }
 }
 
 export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
@@ -86,7 +154,7 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
                 type="category"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#5c728a', fontWeight: 'bold' }}
+                tick={(props) => <CustomXAxisTick {...props} scoreFormat={scoreFormat} />}
               />
               {/* Invisible bars to maintain spacing */}
               <Bar 
