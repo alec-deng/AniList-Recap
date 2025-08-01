@@ -4,6 +4,7 @@ import { useSettings } from "../contexts/SettingsContext"
 import { useAuth } from "../hooks/useAuth"
 import { CustomSelect } from './CustomSelect'
 import { CustomCheckbox } from './CustomCheckbox'
+import HelpIcon from '@mui/icons-material/Help';
 
 const UPDATE_PROFILE_COLOR = gql`
   mutation ($profileColor: String) {
@@ -226,7 +227,7 @@ export const SettingsTab: React.FC = () => {
       </div>
 
       {/* Manual Completion */}
-      <div>
+      <div className="flex items-center space-x-2">
         <CustomCheckbox
           checked={manualCompletion}
           onChange={handleManualCompletionChange}
@@ -234,10 +235,16 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="space-x-1 text-sm text-gray"
         />
+        <div className="relative group">
+          <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
+          <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
+            When enabled, anime stay in your watching list even after completing all episodes. A one-click complete button will appear to manually mark them as completed.
+          </div>
+        </div>
       </div>
 
       {/* Separate Entries */}
-      <div>
+      <div className="flex items-center space-x-2">
         <CustomCheckbox
           checked={separateEntries}
           onChange={handleSeparateEntriesChange}
@@ -245,6 +252,12 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="space-x-1 text-sm text-gray"
         />
+        <div className="relative group">
+          <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
+          <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
+            When enabled, anime that you've caught up to (watched all available episodes) are shown separately from anime with remaining episodes to watch.
+          </div>
+        </div>
       </div>
 
       {/* Adult Content */}
