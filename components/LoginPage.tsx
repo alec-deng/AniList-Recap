@@ -17,12 +17,12 @@ export const LoginPage: React.FC = () => {
       <div className="max-w-md w-full space-y-5">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray mb-2">AniList Recap</h1>
+          <h1 className="text-3xl font-bold text-gray mb-2">AniPortable</h1>
           <p className="text-gray/70">Track your anime progress</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white border border-gray/20 rounded-xl p-8 shadow-sm">
+        <div className="bg-white border border-gray/20 rounded-xl p-8 shadow-md">
           <div className="text-center space-y-6">
             <div>
               <h2 className="text-xl font-semibold text-gray mb-2">Welcome Back</h2>
