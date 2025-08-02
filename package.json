@@ -42,10 +42,6 @@
       "storage",
       "identity"
     ],
-    "host_permissions": [
-      "https://anilist.co/*",
-      "https://graphql.anilist.co/*"
-    ],
     "background": {
       "service_worker": "background.ts",
       "type": "module"
