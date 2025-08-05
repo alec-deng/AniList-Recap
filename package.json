@@ -32,7 +32,7 @@
   "manifest": {
     "manifest_version": 3,
     "name": "AniPortable",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "description": "Track and update your AniList anime without leaving your current tab!",
     "permissions": [
       "storage",
