@@ -1,6 +1,6 @@
 # AniPortable
 
-_A lightweight browser extension to track and manage your AniList anime directly from your current tab._
+_A lightweight browser extension to manage your AniList anime — without leaving your current tab._
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hinkgmlhncliohmckclnopolbfjinhmb?style=flat-square)](https://chromewebstore.google.com/detail/hinkgmlhncliohmckclnopolbfjinhmb)
 
@@ -14,16 +14,16 @@ _A lightweight browser extension to track and manage your AniList anime directly
 
 ## Features
 
-- Quickly update your progress or score using arrow buttons, or type in an exact number by clicking it directly.
+- Instantly update episode progress or score using arrow buttons — or click to type an exact number.
 - View your completed anime stats in a bar chart, with filters for year and season.
-- Split your Watching list into **Behind** and **Caught up** — making it easy to see what needs watching.
-- Keep anime in your Watching section even after reaching the final episode — ideal for screenshots or reviews — and move them to Completed with one click.
+- Separate your Watching list into **Behind** and **Caught Up**, so you know exactly what needs attention.
+- Keep anime in Watching even after finishing the last episode — ideal for screenshots or reviews — then move it to Completed with one click.
 
 ---
 
 ## Screenshots
 
-| List View | Stats View | Settings View |
+| Anime List | Stats | Settings |
 |-----------|------------|----------------|
 | ![List 1](./screenshots/list1.png) | ![Stats 1](./screenshots/stats1.png) | ![Settings](./screenshots/settings.png) |
 | ![List 2](./screenshots/list2.png) | ![Stats 2](./screenshots/stats2.png) | |
@@ -36,9 +36,9 @@ To run AniPortable locally:
 
 1. Clone the repository.
 2. Register your app with [AniList API](https://anilist.co/settings/developer) and obtain a `client_id`.
-3. Create a local config file to store your credentials. This file is `.gitignore` for security.
+3. Create the file `config/auth.config.ts` to store your credentials securely. This file is `.gitignore`d for security.
 4. Run `npm install` to install dependencies.
-5. Use `npx plasmo build` to build a local development with Plasmo.
+5. Use `npx plasmo build` to build locally with Plasmo.
 
 ---
 
@@ -46,8 +46,8 @@ To run AniPortable locally:
 
 AniPortable requests the following Chrome Extension permissions:
 
-- **storage** – Used to persist user settings locally within the extension.
-- **identity** – Required to initiate the AniList OAuth login flow using `chrome.identity.launchWebAuthFlow`.
+- **storage** – Persists user settings and preferences locally.
+- **identity** – Used to authenticate users through AniList via `chrome.identity.launchWebAuthFlow`.
 
 These are minimal and used solely to deliver core functionality securely and privately.
 
@@ -61,3 +61,8 @@ These are minimal and used solely to deliver core functionality securely and pri
 - **Apollo Client** – Simplifies interaction with AniList's GraphQL API.
 - **Recharts** – Used for data visualization in the Stats view.
 
+---
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
