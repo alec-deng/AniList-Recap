@@ -1,6 +1,7 @@
 import React from "react"
 import { useMutation, gql } from "@apollo/client"
 import { useSettings } from "../contexts/SettingsContext"
+import { useAniListData } from "../contexts/AniListDataContext"
 import { useAuth } from "../hooks/useAuth"
 import { CustomSelect } from './CustomSelect'
 import { CustomCheckbox } from './CustomCheckbox'
@@ -85,6 +86,11 @@ export const SettingsTab: React.FC = () => {
     loading
   } = useSettings()
 
+  const {
+    markAnimeDirty,
+    markStatsDirty
+  } = useAniListData()
+
   const { logout } = useAuth()
 
   const [updateProfileColor] = useMutation(UPDATE_PROFILE_COLOR)
@@ -106,6 +112,9 @@ export const SettingsTab: React.FC = () => {
     setTitleLanguage(language)
     try {
       await updateTitleLanguage({ variables: { titleLanguage: language } })
+      
+      // Refetch Anilist data
+      markAnimeDirty()
     } catch (error) {
       console.error('Failed to update title language:', error)
     }
@@ -115,6 +124,10 @@ export const SettingsTab: React.FC = () => {
     setDisplayAdultContent(checked)
     try {
       await updateDisplayAdultContent({ variables: { displayAdultContent: checked } })
+
+      // Refetch Anilist data
+      markAnimeDirty()
+      markStatsDirty()
     } catch (error) {
       console.error('Failed to update adult content setting:', error)
     }
@@ -124,6 +137,10 @@ export const SettingsTab: React.FC = () => {
     setScoreFormat(format)
     try {
       await updateScoreFormat({ variables: { scoreFormat: format } })
+
+      // Refetch Anilist data
+      markAnimeDirty()
+      markStatsDirty()
     } catch (error) {
       console.error('Failed to update score format:', error)
     }

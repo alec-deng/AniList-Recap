@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
+import { AniListDataProvider } from "./contexts/AniListDataContext"
 import { ApolloProvider } from "@apollo/client"
 import { client } from "./apollo/client"
 import { Tabs } from "./components/Tabs"
@@ -67,7 +68,9 @@ function Popup() {
   return (
     <ApolloProvider client={client}>
       <SettingsProvider>
-        <PopupContent />
+        <AniListDataProvider>
+          <PopupContent />
+        </AniListDataProvider>
       </SettingsProvider>
     </ApolloProvider>
   )

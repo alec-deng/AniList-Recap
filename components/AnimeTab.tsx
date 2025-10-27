@@ -2,6 +2,7 @@ import React, { useEffect } from "react"
 import { useQuery, useMutation, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { useSettings } from "../contexts/SettingsContext"
+import { useAniListData } from "../contexts/AniListDataContext"
 
 const VIEWER_QUERY = gql`
   query {
@@ -91,6 +92,14 @@ export const AnimeTab: React.FC = () => {
     separateEntries
   } = useSettings()
 
+  const {
+    animeList,
+    animeDirty,
+    setAnimeList,
+    markStatsDirty,
+    clearAnimeDirty
+  } = useAniListData()
+
   const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
@@ -99,22 +108,30 @@ export const AnimeTab: React.FC = () => {
     skip: !userId
   })
 
-  // Force refetch when settings changes
+  // Only refetch if there's no cache or it's marked dirty
   useEffect(() => {
-    if (userId) {
-      refetch()
-    }
-  }, [scoreFormat, displayAdultContent, userId, refetch])
+    if (!userId) return
+    if (animeList && !animeDirty) return
+    refetch().then((res) => {
+      const fetched = res.data?.MediaListCollection?.lists?.[0]?.entries ?? []
+      setAnimeList(fetched)
+      clearAnimeDirty()
+    })
+  }, [userId, animeDirty])
 
   const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
   const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
   const [markCompleted] = useMutation(MARK_COMPLETED_MUTATION)
   const [keepCurrent] = useMutation(KEEP_CURRENT_MUTATION)
 
-  if (viewerLoading || loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
-  if (error) return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading anime list.</div>
+  // Use cached list if available
+  const watchingList = animeList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
-  const watchingList = data?.MediaListCollection?.lists?.[0]?.entries ?? []
+  // Early return when loading or getting an error
+  if (viewerLoading || loading)
+    return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
+  if (error)
+    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading anime list.</div>
 
   // Define the anime type
   type AnimeEntry = {
@@ -152,60 +169,59 @@ export const AnimeTab: React.FC = () => {
   // Sort anime based on user preference
   const sortedAnime = [...filteredAnime].sort((a, b) => {
     switch (rowOrder) {
-      case 'score':
+      case "score":
         return b.score - a.score || a.title.localeCompare(b.title)
-      case 'title':
+      case "title":
         return a.title.localeCompare(b.title)
-      case 'updatedAt':
+      case "updatedAt":
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      case 'id':
       default:
         return a.id - b.id
     }
   })
 
   // Separate entries if setting is enabled
-  const caughtUpAnime = separateEntries 
-    ? sortedAnime.filter(anime => 
-        (anime.totalEpisodes !== null &&
-          anime.progress === anime.totalEpisodes) ||
-        (anime.nextAiringEpisode !== null &&
-          anime.progress >= anime.nextAiringEpisode - 1)
+  const caughtUpAnime = separateEntries
+    ? sortedAnime.filter(
+        (anime) =>
+          (anime.totalEpisodes && anime.progress === anime.totalEpisodes) ||
+          (anime.nextAiringEpisode && anime.progress >= anime.nextAiringEpisode - 1)
       )
     : []
-  
-  const behindAnime = separateEntries 
-    ? sortedAnime.filter(anime => !caughtUpAnime.includes(anime))
+
+  const behindAnime = separateEntries
+    ? sortedAnime.filter((anime) => !caughtUpAnime.includes(anime))
     : sortedAnime
 
   // Handle manual progress change
   const handleProgressChange = async (anime: any, newProgress: number) => {
     const maxEpisodes = anime.totalEpisodes || 999
     const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
-    
     await updateProgress({ variables: { id: anime.id, progress: clampedProgress } })
-    
-    // If manual completion is enabled and progress equals total episodes
-    if (manualCompletion && anime.totalEpisodes && clampedProgress >= anime.totalEpisodes) {
-      await keepCurrent({ variables: { id: anime.id, progress: clampedProgress } })
+
+    // Update stats if finished and not manual completion
+    if (anime.totalEpisodes && clampedProgress >= anime.totalEpisodes) {
+      if (manualCompletion) {
+        await keepCurrent({ variables: { id: anime.id, progress: clampedProgress } })
+      } else {
+        markStatsDirty()
+      }
     }
     
-    refetch()
+    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  // Handle score change
   const handleScoreChange = async (anime: any, score: number) => {
     await updateScore({ variables: { id: anime.id, score } })
-    refetch()
+    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  // Handle manual completion
   const handleMarkCompleted = async (anime: any) => {
     await markCompleted({ variables: { id: anime.id } })
-    refetch()
+    markStatsDirty()
+    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  // Render anime grid (2 cards per row)
   const renderAnimeGrid = (animeList: any[], title: string) => (
     <div className="mb-6">
       <h3 className="text-lg text-gray font-medium mb-2">
