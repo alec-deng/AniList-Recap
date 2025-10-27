@@ -66,13 +66,13 @@ export const StatsTab: React.FC = () => {
 
   // Score distribution
   const allScores = useMemo(() => {
-  const scores: Record<number, boolean> = {}
-  entries.forEach((entry: any) => {
-    if (entry.score) {
-      scores[entry.score] = true
-    }
-  })
-  return Object.keys(scores).map(score => Number(score)).sort((a, b) => a - b)
+    const scores: Record<number, boolean> = {}
+    entries.forEach((entry: any) => {
+      if (entry.score) {
+        scores[entry.score] = true
+      }
+    })
+    return Object.keys(scores).map(score => Number(score)).sort((a, b) => a - b)
   }, [entries])
 
   // Extract years
@@ -92,7 +92,7 @@ export const StatsTab: React.FC = () => {
       const matchAdult = displayAdultContent ? true : !e.media.isAdult
       return matchYear && matchSeason && matchAdult
     })
-  }, [entries, year, season, scoreFormat, displayAdultContent])
+  }, [entries, year, season, displayAdultContent])
 
   // total watched count (filtered)
   const totalWatched = useMemo(() => filtered.length || 0, [filtered])
@@ -102,7 +102,7 @@ export const StatsTab: React.FC = () => {
     if (totalWatched === 0) return 0
     const totalScore = filtered.reduce((sum: number, e: any) => sum + (e.score || 0), 0)
     return totalScore / totalWatched
-  }, [filtered])
+  }, [filtered, totalWatched])
 
   // Score distribution
   const scoreData = useMemo(() => {
@@ -119,7 +119,7 @@ export const StatsTab: React.FC = () => {
   if (loading) return <div className="p-4">Loading...</div>
   if (error) return <div className="p-4 text-red-500">Error loading stats.</div>
 
-    return (
+  return (
     <div className="p-2">
 
       {/* Stats Display Section */}
@@ -128,16 +128,10 @@ export const StatsTab: React.FC = () => {
         {/* Total Anime */}
         <div className="flex space-x-4 items-center justify-center">
           <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg ">
-            <MonitorCheck
-              size={20}
-              className="text-gray"
-            />
+            <MonitorCheck size={20} className="text-gray" />
           </div>
           <div className="text-start">
-            <div 
-              className="text-2xl font-bold"
-              style={{ color: profileColor }}
-            >
+            <div className="text-2xl font-bold" style={{ color: profileColor }}>
               {totalWatched}
             </div>
             <div className="text-sm text-gray tracking-wide font-semibold">
@@ -146,19 +140,12 @@ export const StatsTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Mean Score */}
         <div className="flex space-x-4 items-center justify-center">
           <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg ">
-            <Percent
-              size={20}
-              className="text-gray"
-            />
+            <Percent size={20} className="text-gray" />
           </div>
           <div className="text-start">
-            <div 
-              className="text-2xl font-bold"
-              style={{ color: profileColor }}
-            >
+            <div className="text-2xl font-bold" style={{ color: profileColor }}>
               {meanScore.toFixed(2)}
             </div>
             <div className="text-sm text-gray tracking-wide font-semibold">
@@ -171,80 +158,78 @@ export const StatsTab: React.FC = () => {
       {/* Filters Section */}
       <div className="pl-6 pr-6 flex justify-between items-start">
       {/* Year Section */}
-      <div className="flex-1">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-gray">Year</span>
-          {year && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => {
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray">Year</span>
+            {year && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
                     setYear(null)
                     setSliderValue(0)
-                  }
-                }
-                className="text-gray leading-none"
-              >
-                <CancelIcon sx={{ fontSize: '1rem' }}/>
-              </button>
-              <span className="text-medium text-gray">{year}</span>
-            </div>
-          )}
-        </div>
-        <Slider.Root
-          className="relative flex items-center select-none touch-none w-full h-8"
-          min={0}
-          max={years.length}
-          step={1}
-          value={[sliderValue]}
-          onValueChange={(values) => {
-            const yearIndex = values[0]
-            setSliderValue(yearIndex)
-            if (yearIndex == 0) {
-              setYear(null)
-            } else {
-              const selectedYear = years[yearIndex - 1]
-              setYear(selectedYear)
-            }
-          }}
-          onPointerDown={() => setIsSliderActive(true)}
-          onPointerUp={() => setIsSliderActive(false)}
-        >
-          <Slider.Track className="bg-white-100 relative grow rounded-full h-1.5">
-            <Slider.Range className="absolute rounded-full h-full" 
-              style={{ background: profileColor }}/>
-          </Slider.Track>
-          <Slider.Thumb 
-            className="block relative w-4 h-4 bg-white-100 shadow-lg border-2 rounded-full hover:w-5 hover:h-5 transition-all duration-200 ease-in-out cursor-pointer group"
-            style={{ borderColor: profileColor }}
-            aria-label="Year"
+                  }}
+                  className="text-gray leading-none"
+                >
+                  <CancelIcon sx={{ fontSize: '1rem' }}/>
+                </button>
+                <span className="text-medium text-gray">{year}</span>
+              </div>
+            )}
+          </div>
+          <Slider.Root
+            className="relative flex items-center select-none touch-none w-full h-8"
+            min={0}
+            max={years.length}
+            step={1}
+            value={[sliderValue]}
+            onValueChange={(values) => {
+              const yearIndex = values[0]
+              setSliderValue(yearIndex)
+              if (yearIndex == 0) {
+                setYear(null)
+              } else {
+                const selectedYear = years[yearIndex - 1]
+                setYear(selectedYear)
+              }
+            }}
+            onPointerDown={() => setIsSliderActive(true)}
+            onPointerUp={() => setIsSliderActive(false)}
           >
-            <div className={`flex items-center justify-center absolute min-w-14 min-h-8 -top-10 left-1/2 transform -translate-x-1/2 bg-[#242538] text-white text-xs px-2 py-1 rounded transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10
-              ${isSliderActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`
-              }>
-              {sliderValue === 0 ? "All Years" : years[sliderValue - 1]}
-            </div>
-          </Slider.Thumb>
-        </Slider.Root>
-      </div>
+            <Slider.Track className="bg-white-100 relative grow rounded-full h-1.5">
+              <Slider.Range className="absolute rounded-full h-full" 
+                style={{ background: profileColor }}/>
+            </Slider.Track>
+            <Slider.Thumb 
+              className="block relative w-4 h-4 bg-white-100 shadow-lg border-2 rounded-full hover:w-5 hover:h-5 transition-all duration-200 ease-in-out cursor-pointer group"
+              style={{ borderColor: profileColor }}
+              aria-label="Year"
+            >
+              <div className={`flex items-center justify-center absolute min-w-14 min-h-8 -top-10 left-1/2 transform -translate-x-1/2 bg-[#242538] text-white text-xs px-2 py-1 rounded transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10
+                ${isSliderActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {sliderValue === 0 ? "All Years" : years[sliderValue - 1]}
+              </div>
+            </Slider.Thumb>
+          </Slider.Root>
+        </div>
 
       {/* Season Section */}
-      <div className="ml-10 min-w-[170px]">
-        <h3 className="text-sm font-medium mb-2 text-gray ml-1">Season</h3>
-        <CustomSelect
-          options={[
-            {name: "Any", value: "All"},
-            { name: "Winter", value: "WINTER" },
-            { name: "Spring", value: "SPRING" },
-            { name: "Summer", value: "SUMMER" },
-            { name: "Fall", value: "FALL" }
-          ]}
-          value={season}
-          onChange={setSeason}
-          profileColor={profileColor}
-          className="w-full [&>button]:py-1"
-        />
+        <div className="ml-10 min-w-[170px]">
+          <h3 className="text-sm font-medium mb-2 text-gray ml-1">Season</h3>
+          <CustomSelect
+            options={[
+              {name: "Any", value: "All"},
+              { name: "Winter", value: "WINTER" },
+              { name: "Spring", value: "SPRING" },
+              { name: "Summer", value: "SUMMER" },
+              { name: "Fall", value: "FALL" }
+            ]}
+            value={season}
+            onChange={setSeason}
+            profileColor={profileColor}
+            className="w-full [&>button]:py-1"
+          />
+        </div>
       </div>
-    </div>
       
       {/* Score Chart */}
       <div className="-mt-2">

@@ -84,7 +84,6 @@ const KEEP_CURRENT_MUTATION = gql`
 export const AnimeTab: React.FC = () => {
   const {
     profileColor,
-    titleLanguage,
     displayAdultContent,
     scoreFormat,
     rowOrder,
@@ -105,7 +104,7 @@ export const AnimeTab: React.FC = () => {
     if (userId) {
       refetch()
     }
-  }, [titleLanguage, scoreFormat, displayAdultContent, userId, refetch])
+  }, [scoreFormat, displayAdultContent, userId, refetch])
 
   const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
   const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
