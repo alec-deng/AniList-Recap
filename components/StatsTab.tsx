@@ -116,8 +116,8 @@ export const StatsTab: React.FC = () => {
     }))
   }, [filtered])
 
-  if (loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4 text-red-500">Error loading stats.</div>
+  if (loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
+  if (error) return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading stats.</div>
 
   return (
     <div className="p-2">

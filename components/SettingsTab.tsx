@@ -146,7 +146,7 @@ export const SettingsTab: React.FC = () => {
     setSeparateEntries(separate)
   }
 
-  if (loading) return <div className="p-4">Loading...</div>
+  if (loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
 
   return (
     <div className="p-4 space-y-5">

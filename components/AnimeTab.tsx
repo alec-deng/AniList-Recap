@@ -111,8 +111,8 @@ export const AnimeTab: React.FC = () => {
   const [markCompleted] = useMutation(MARK_COMPLETED_MUTATION)
   const [keepCurrent] = useMutation(KEEP_CURRENT_MUTATION)
 
-  if (viewerLoading || loading) return <div className="p-4">Loading...</div>
-  if (error) return <div className="p-4 text-red-500">Error loading anime list.</div>
+  if (viewerLoading || loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
+  if (error) return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading anime list.</div>
 
   const watchingList = data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
