@@ -112,9 +112,6 @@ export const SettingsTab: React.FC = () => {
     setTitleLanguage(language)
     try {
       await updateTitleLanguage({ variables: { titleLanguage: language } })
-      
-      // Refetch Anilist data
-      markAnimeDirty()
     } catch (error) {
       console.error('Failed to update title language:', error)
     }

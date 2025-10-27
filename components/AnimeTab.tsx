@@ -24,7 +24,9 @@ const WATCHING_LIST_QUERY = gql`
           media {
             id
             title {
-              userPreferred
+              english
+              native
+              romaji
             }
             nextAiringEpisode {
               episode
@@ -85,6 +87,7 @@ const KEEP_CURRENT_MUTATION = gql`
 export const AnimeTab: React.FC = () => {
   const {
     profileColor,
+    titleLanguage,
     displayAdultContent,
     scoreFormat,
     rowOrder,
@@ -147,10 +150,11 @@ export const AnimeTab: React.FC = () => {
     mediaId: number
   }
 
+  
   // Transform entries to our anime format
   const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
     id: entry.id,
-    title: entry.media.title.userPreferred,
+    title: entry.media.title[titleLanguage.toLowerCase()],
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
