@@ -32,12 +32,12 @@ _A lightweight browser extension to manage your AniList anime — without leavin
   <tr>
     <td width="33%"><img src="./screenshots/anime.png" width="100%"/></td>
     <td width="33%"><img src="./screenshots/stats1.png" width="100%"/></td>
-    <td width="33%"><img src="./screenshots/settings.png" width="100%"/></td>
+    <td width="33%"><img src="./screenshots/settings1.png" width="100%"/></td>
   </tr>
   <tr>
     <td width="33%"><img src="./screenshots/manga.png" width="100%"/></td>
     <td width="33%"><img src="./screenshots/stats2.png" width="100%"/></td>
-    <td width="33%"></td>
+    <td width="33%"><img src="./screenshots/settings2.png" width="100%"/></td>
   </tr>
 </table>
 
