@@ -23,10 +23,23 @@ _A lightweight browser extension to manage your AniList anime — without leavin
 
 ## Screenshots
 
-| Anime/Manga List | Stats | Settings |
-|------------------|-------|----------|
-| <img src="./screenshots/anime.png" style="max-width:250px; height:auto;"/> | <img src="./screenshots/stats1.png" style="max-width:250px; height:auto;"/> | <img src="./screenshots/settings.png" style="max-width:250px; height:auto;"/> |
-| <img src="./screenshots/manga.png" style="max-width:250px; height:auto;"/> | <img src="./screenshots/stats2.png" style="max-width:250px; height:auto;"/> | |
+<table>
+  <tr>
+    <th>Anime & Manga List</th>
+    <th>Stats</th>
+    <th>Settings</th>
+  </tr>
+  <tr>
+    <td width="33%"><img src="./screenshots/anime.png" width="100%"/></td>
+    <td width="33%"><img src="./screenshots/stats1.png" width="100%"/></td>
+    <td width="33%"><img src="./screenshots/settings.png" width="100%"/></td>
+  </tr>
+  <tr>
+    <td width="33%"><img src="./screenshots/manga.png" width="100%"/></td>
+    <td width="33%"><img src="./screenshots/stats2.png" width="100%"/></td>
+    <td width="33%"></td>
+  </tr>
+</table>
 
 ---
 
