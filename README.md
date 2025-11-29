@@ -16,7 +16,7 @@ _A lightweight browser extension to manage your AniList anime and manga — with
 
 - **Quick updates** — Bump episode/chapter progress or scores with arrow buttons, or click to type an exact number
 - **Visual stats** — View your anime and manga stats in bar charts, with year and season filters for anime
-- **Smart organization** — Split your Watching/Reading lists into **Behind** and **Caught Up** so you always know what needs attention
+- **Dynamic lists** — Split your Watching lists into **Behind** and **Caught Up** so you always know what needs attention
 - **Flexible completion** — Enable manual completion to keep anime/manga in your current list after finishing — great for screenshots or reviews. Then mark complete with one click when you're ready
 
 ---
