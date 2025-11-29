@@ -31,7 +31,7 @@ export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
         type="checkbox"
         checked={isChecked}
         onChange={handleChange}
-        className="opacity-0 absolute cursor-pointer left-0 top-0 w-0 h-0"
+        className="opacity-0 absolute cursor-pointer w-0 h-0"
       />
       
       {/* Custom checkbox visual */}

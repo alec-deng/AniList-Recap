@@ -15,7 +15,7 @@ _A lightweight browser extension to manage your AniList anime — without leavin
 ## Features
 
 - Instantly update episode progress or score using arrow buttons — or click to type an exact number.
-- View your completed anime stats in a bar chart, with filters for year and season.
+- View your completed anime/manga stats in a bar chart, with filters for year and season.
 - Separate your Watching list into **Behind** and **Caught Up**, so you know exactly what needs attention.
 - Keep anime in Watching even after finishing the last episode — ideal for screenshots or reviews — then move it to Completed with one click.
 
@@ -23,10 +23,10 @@ _A lightweight browser extension to manage your AniList anime — without leavin
 
 ## Screenshots
 
-| Anime List | Stats | Settings |
+| Anime/Manga List | Stats | Settings |
 |-----------|------------|----------------|
-| ![List 1](./screenshots/list1.png) | ![Stats 1](./screenshots/stats1.png) | ![Settings](./screenshots/settings.png) |
-| ![List 2](./screenshots/list2.png) | ![Stats 2](./screenshots/stats2.png) | |
+| ![List 1](./screenshots/anime.png) | ![Stats 1](./screenshots/stats1.png) | ![Settings](./screenshots/settings.png) |
+| ![List 2](./screenshots/manga.png) | ![Stats 2](./screenshots/stats2.png) | |
 
 ---
 

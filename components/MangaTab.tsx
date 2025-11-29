@@ -16,9 +16,9 @@ const VIEWER_QUERY = gql`
   }
 `
 
-const WATCHING_LIST_QUERY = gql`
+const READING_LIST_QUERY = gql`
   query ($userId: Int) {
-    MediaListCollection(userId: $userId, type: ANIME, status: CURRENT) {
+    MediaListCollection(userId: $userId, type: MANGA, status: CURRENT) {
       lists {
         entries {
           media {
@@ -28,19 +28,17 @@ const WATCHING_LIST_QUERY = gql`
               native
               romaji
             }
-            nextAiringEpisode {
-              episode
-            }
+            isAdult
             coverImage {
               large
             }
-            episodes
-            isAdult
+            chapters
           }
           progress
           score
           id
           updatedAt
+          status
         }
       }
     }
@@ -84,7 +82,7 @@ const KEEP_CURRENT_MUTATION = gql`
   }
 `
 
-export const AnimeTab: React.FC = () => {
+export const MangaTab: React.FC = () => {
   const {
     profileColor,
     titleLanguage,
@@ -96,17 +94,17 @@ export const AnimeTab: React.FC = () => {
   } = useSettings()
 
   const {
-    animeList,
-    animeDirty,
-    setAnimeList,
-    markStatsDirty,
-    clearAnimeDirty
+    mangaList,
+    mangaDirty,
+    setMangaList,
+    markMangaStatsDirty,
+    clearMangaDirty
   } = useAniListData()
 
   const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
-  const { data, loading, error, refetch } = useQuery(WATCHING_LIST_QUERY, {
+  const { data, loading, error, refetch } = useQuery(READING_LIST_QUERY, {
     variables: { userId },
     skip: !userId
   })
@@ -114,13 +112,13 @@ export const AnimeTab: React.FC = () => {
   // Only refetch if there's no cache or it's marked dirty
   useEffect(() => {
     if (!userId) return
-    if (animeList && !animeDirty) return
+    if (mangaList && !mangaDirty) return
     refetch().then((res) => {
       const fetched = res.data?.MediaListCollection?.lists?.[0]?.entries ?? []
-      setAnimeList(fetched)
-      clearAnimeDirty()
+      setMangaList(fetched)
+      clearMangaDirty()
     })
-  }, [userId, animeDirty])
+  }, [userId, mangaDirty])
 
   const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
   const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
@@ -128,50 +126,47 @@ export const AnimeTab: React.FC = () => {
   const [keepCurrent] = useMutation(KEEP_CURRENT_MUTATION)
 
   // Use cached list if available
-  const watchingList = animeList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
+  const readingList = mangaList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
   // Early return when loading or getting an error
   if (viewerLoading || loading)
     return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
   if (error)
-    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading anime list.</div>
+    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading manga list.</div>
 
-  // Define the anime type
-  type AnimeEntry = {
+  // Define the manga type
+  type MangaEntry = {
     id: number
     title: string
     cover: string
     progress: number
     score: number
-    nextAiringEpisode: number | null
     totalEpisodes: number | null
     isAdult: boolean
     updatedAt: string
     mediaId: number
   }
 
-  
-  // Transform entries to our anime format
-  const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
+  // Transform entries to our manga format
+  const transformedManga: MangaEntry[] = readingList.map((entry: any) => ({
     id: entry.id,
     title: entry.media.title[titleLanguage.toLowerCase()],
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
-    nextAiringEpisode: entry.media.nextAiringEpisode?.episode || null,
-    totalEpisodes: entry.media.episodes,
+    totalEpisodes: entry.media.chapters,
     isAdult: entry.media.isAdult,
     updatedAt: entry.updatedAt,
     mediaId: entry.media.id
   }))
 
   // Filter adult content based on settings
-  const filteredAnime = transformedAnime.filter((anime: AnimeEntry) => 
-    displayAdultContent || !anime.isAdult
+  const filteredManga = transformedManga.filter((manga: MangaEntry) => 
+    displayAdultContent || !manga.isAdult
   )
 
-  // Sort anime based on user preference
-  const sortedAnime = [...filteredAnime].sort((a, b) => {
+  // Sort manga based on user preference
+  const sortedManga = [...filteredManga].sort((a, b) => {
     switch (rowOrder) {
       case "score":
         return b.score - a.score || a.title.localeCompare(b.title)
@@ -185,61 +180,60 @@ export const AnimeTab: React.FC = () => {
   })
 
   // Separate entries if setting is enabled
-  const caughtUpAnime = separateEntries
-    ? sortedAnime.filter(
-        (anime) =>
-          (anime.totalEpisodes && anime.progress === anime.totalEpisodes) ||
-          (anime.nextAiringEpisode && anime.progress >= anime.nextAiringEpisode - 1)
+  const completedManga = separateEntries
+    ? sortedManga.filter(
+        (manga) =>
+          manga.totalEpisodes && manga.progress >= manga.totalEpisodes
       )
     : []
 
-  const behindAnime = separateEntries
-    ? sortedAnime.filter((anime) => !caughtUpAnime.includes(anime))
-    : sortedAnime
+  const readingManga = separateEntries
+    ? sortedManga.filter((manga) => !completedManga.includes(manga))
+    : sortedManga
 
   // Handle manual progress change
-  const handleProgressChange = async (anime: any, newProgress: number) => {
-    const maxEpisodes = anime.totalEpisodes || 999
-    const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
-    await updateProgress({ variables: { id: anime.id, progress: clampedProgress } })
+  const handleProgressChange = async (manga: any, newProgress: number) => {
+    const maxChapters = manga.totalEpisodes || 999
+    const clampedProgress = Math.min(Math.max(0, newProgress), maxChapters)
+    await updateProgress({ variables: { id: manga.id, progress: clampedProgress } })
 
     // Update stats if finished and not manual completion
-    if (anime.totalEpisodes && clampedProgress >= anime.totalEpisodes) {
+    if (manga.totalEpisodes && clampedProgress >= manga.totalEpisodes) {
       if (manualCompletion) {
-        await keepCurrent({ variables: { id: anime.id, progress: clampedProgress } })
+        await keepCurrent({ variables: { id: manga.id, progress: clampedProgress } })
       } else {
-        markStatsDirty()
+        markMangaStatsDirty()
       }
     }
     
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  const handleScoreChange = async (anime: any, score: number) => {
-    await updateScore({ variables: { id: anime.id, score } })
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+  const handleScoreChange = async (manga: any, score: number) => {
+    await updateScore({ variables: { id: manga.id, score } })
+    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  const handleMarkCompleted = async (anime: any) => {
-    await markCompleted({ variables: { id: anime.id } })
-    markStatsDirty()
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+  const handleMarkCompleted = async (manga: any) => {
+    await markCompleted({ variables: { id: manga.id } })
+    markMangaStatsDirty()
+    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  const renderAnimeGrid = (animeList: any[], title: string) => (
+  const renderMangaGrid = (mangaList: any[], title: string) => (
     <div className="mb-6">
       <h3 className="text-lg text-gray font-medium mb-2">
-        {title} ({animeList.length})
+        {title} ({mangaList.length})
       </h3>
       <div className="grid grid-cols-3 gap-4">
-        {animeList.map((anime) => (
+        {mangaList.map((manga) => (
           <AnimeCard
-            key={anime.id}
-            anime={anime}
+            key={manga.id}
+            anime={manga}
             profileColor={profileColor}
-            onScoreChange={(score) => handleScoreChange(anime, score)}
-            onMarkCompleted={() => handleMarkCompleted(anime)}
-            onProgressChange={(progress) => handleProgressChange(anime, progress)}
+            onScoreChange={(score) => handleScoreChange(manga, score)}
+            onMarkCompleted={() => handleMarkCompleted(manga)}
+            onProgressChange={(progress) => handleProgressChange(manga, progress)}
             loading={loading}
             scoreFormat={scoreFormat}
             manualCompletion={manualCompletion}
@@ -255,21 +249,21 @@ export const AnimeTab: React.FC = () => {
       {separateEntries ? (
         <>
           {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
-          {behindAnime.length > 0 && caughtUpAnime.length > 0 ? (
+          {readingManga.length > 0 && completedManga.length > 0 ? (
             <>
-              {renderAnimeGrid(behindAnime, "Behind")}
-              {renderAnimeGrid(caughtUpAnime, "Caught-Up")}
+              {renderMangaGrid(readingManga, "Reading")}
+              {renderMangaGrid(completedManga, "Completed")}
             </>
-          ) : behindAnime.length > 0 ? (
-            renderAnimeGrid(behindAnime, "Behind")
-          ) : caughtUpAnime.length > 0 ? (
-            renderAnimeGrid(caughtUpAnime, "Caught-Up")
+          ) : readingManga.length > 0 ? (
+            renderMangaGrid(readingManga, "Reading")
+          ) : completedManga.length > 0 ? (
+            renderMangaGrid(completedManga, "Completed")
           ) : (
-            renderAnimeGrid([], "Watching")
+            renderMangaGrid([], "Reading")
           )}
         </>
       ) : (
-        renderAnimeGrid(sortedAnime, "Watching")
+        renderMangaGrid(sortedManga, "Reading")
       )}
     </div>
   )

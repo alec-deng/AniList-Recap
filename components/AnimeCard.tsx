@@ -200,7 +200,7 @@ export const AnimeCard: React.FC<Props> = ({
               </span>
             )}
             <span className="text-xs flash-on-group-hover" style={{ color: profileColor }}>
-              /{anime.totalEpisodes || '?'}
+              {anime.totalEpisodes && `/${anime.totalEpisodes}`}
             </span>
             <div className="flex flex-col ml-1 opacity-0 group-hover:opacity-100 duration-150">
               <button

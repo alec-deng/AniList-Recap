@@ -88,7 +88,9 @@ export const SettingsTab: React.FC = () => {
 
   const {
     markAnimeDirty,
-    markStatsDirty
+    markStatsDirty,
+    markMangaDirty,
+    markMangaStatsDirty
   } = useAniListData()
 
   const { logout } = useAuth()
@@ -122,9 +124,11 @@ export const SettingsTab: React.FC = () => {
     try {
       await updateDisplayAdultContent({ variables: { displayAdultContent: checked } })
 
-      // Refetch Anilist data
+      // Refetch AniList data for both anime and manga
       markAnimeDirty()
       markStatsDirty()
+      markMangaDirty()
+      markMangaStatsDirty()
     } catch (error) {
       console.error('Failed to update adult content setting:', error)
     }
@@ -135,9 +139,11 @@ export const SettingsTab: React.FC = () => {
     try {
       await updateScoreFormat({ variables: { scoreFormat: format } })
 
-      // Refetch Anilist data
+      // Refetch AniList data for both anime and manga
       markAnimeDirty()
       markStatsDirty()
+      markMangaDirty()
+      markMangaStatsDirty()
     } catch (error) {
       console.error('Failed to update score format:', error)
     }
@@ -252,7 +258,7 @@ export const SettingsTab: React.FC = () => {
         <div className="relative group">
           <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
           <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-            When enabled, anime stay in your watching list even after completing all episodes. A one-click complete button will appear to manually mark them as completed.
+            When enabled, anime/manga stay in your list even after completing all episodes/chapters. A one-click complete button will appear to manually mark them as completed.
           </div>
         </div>
       </div>
@@ -269,7 +275,7 @@ export const SettingsTab: React.FC = () => {
         <div className="relative group">
           <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
           <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-            When enabled, anime that you've caught up to (watched all available episodes) are shown separately from anime with remaining episodes to watch.
+            When enabled, anime/manga that you've caught up to (watched/read all available episodes/chapters) are shown separately from those with remaining content.
           </div>
         </div>
       </div>

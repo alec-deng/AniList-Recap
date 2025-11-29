@@ -3,14 +3,24 @@ import React, { createContext, useState, useContext, useCallback } from "react"
 type AniListDataContextType = {
   animeList: any[] | null
   statsList: any[] | null
+  mangaList: any[] | null
+  mangaStatsList: any[] | null
   animeDirty: boolean
   statsDirty: boolean
+  mangaDirty: boolean
+  mangaStatsDirty: boolean
   setAnimeList: (data: any[]) => void
   setStatsList: (data: any[]) => void
+  setMangaList: (data: any[]) => void
+  setMangaStatsList: (data: any[]) => void
   markAnimeDirty: () => void
   markStatsDirty: () => void
+  markMangaDirty: () => void
+  markMangaStatsDirty: () => void
   clearAnimeDirty: () => void
   clearStatsDirty: () => void
+  clearMangaDirty: () => void
+  clearMangaStatsDirty: () => void
 }
 
 const AniListDataContext = createContext<AniListDataContextType | null>(null)
@@ -18,8 +28,12 @@ const AniListDataContext = createContext<AniListDataContextType | null>(null)
 export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [animeList, setAnimeList] = useState<any[] | null>(null)
   const [statsList, setStatsList] = useState<any[] | null>(null)
+  const [mangaList, setMangaList] = useState<any[] | null>(null)
+  const [mangaStatsList, setMangaStatsList] = useState<any[] | null>(null)
   const [animeDirty, setAnimeDirty] = useState(false)
   const [statsDirty, setStatsDirty] = useState(false)
+  const [mangaDirty, setMangaDirty] = useState(false)
+  const [mangaStatsDirty, setMangaStatsDirty] = useState(false)
 
   const markAnimeDirty = useCallback(() => {
     setAnimeList([])
@@ -29,22 +43,42 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setStatsList([])
     setStatsDirty(true)
   }, [])
+  const markMangaDirty = useCallback(() => {
+    setMangaList([])
+    setMangaDirty(true)
+  }, [])
+  const markMangaStatsDirty = useCallback(() => {
+    setMangaStatsList([])
+    setMangaStatsDirty(true)
+  }, [])
   const clearAnimeDirty = useCallback(() => setAnimeDirty(false), [])
   const clearStatsDirty = useCallback(() => setStatsDirty(false), [])
+  const clearMangaDirty = useCallback(() => setMangaDirty(false), [])
+  const clearMangaStatsDirty = useCallback(() => setMangaStatsDirty(false), [])
 
   return (
     <AniListDataContext.Provider
       value={{
         animeList,
         statsList,
+        mangaList,
+        mangaStatsList,
         animeDirty,
         statsDirty,
+        mangaDirty,
+        mangaStatsDirty,
         setAnimeList,
         setStatsList,
+        setMangaList,
+        setMangaStatsList,
         markAnimeDirty,
         markStatsDirty,
+        markMangaDirty,
+        markMangaStatsDirty,
         clearAnimeDirty,
-        clearStatsDirty
+        clearStatsDirty,
+        clearMangaDirty,
+        clearMangaStatsDirty
       }}
     >
       {children}

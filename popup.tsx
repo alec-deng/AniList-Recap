@@ -5,6 +5,7 @@ import { ApolloProvider } from "@apollo/client"
 import { client } from "./apollo/client"
 import { Tabs } from "./components/Tabs"
 import { AnimeTab } from "./components/AnimeTab"
+import { MangaTab } from "./components/MangaTab"
 import { StatsTab } from "./components/StatsTab"
 import { SettingsTab } from "./components/SettingsTab"
 import { LoginPage } from "./components/LoginPage"
@@ -12,7 +13,7 @@ import { useAuth } from "./hooks/useAuth"
 import { SquareArrowOutUpRight  } from "lucide-react"
 import "./styles/popup.css"
 
-const TAB_NAMES = ["Anime List", "Stats", "Settings"]
+const TAB_NAMES = ["Anime List", "Manga List", "Stats", "Settings"]
 
 function PopupContent() {
   const [selectedTab, setSelectedTab] = useState(0)
@@ -43,7 +44,7 @@ function PopupContent() {
           href="https://anilist.co" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-white flex items-center space-x-2 pt-6 pr-4 group transition-colors duration-200"
+          className="text-white flex items-center space-x-2 pt-6 group transition-colors duration-200"
           style={{ '--profile-color': profileColor } as React.CSSProperties}
         >
           <span className="text-sm font-medium">AniList</span>
@@ -52,13 +53,14 @@ function PopupContent() {
             size={16} 
           />
         </a>
-        
       </div>
+
       <Tabs tabs={TAB_NAMES} selected={selectedTab} onSelect={setSelectedTab} />
       <div className="bg-white">
         {selectedTab === 0 && <AnimeTab />}
-        {selectedTab === 1 && <StatsTab />}
-        {selectedTab === 2 && <SettingsTab />}
+        {selectedTab === 1 && <MangaTab />}
+        {selectedTab === 2 && <StatsTab />}
+        {selectedTab === 3 && <SettingsTab />}
       </div>
     </div>
   )
