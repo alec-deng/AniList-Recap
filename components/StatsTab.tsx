@@ -10,7 +10,7 @@ import * as Slider from "@radix-ui/react-slider"
 
 const COMPLETED_ANIME_QUERY = gql`
   query ($userId: Int) {
-    MediaListCollection(userId: $userId, type: ANIME, status: COMPLETED) {
+    MediaListCollection(userId: $userId, type: ANIME) {
       lists {
         entries {
           media {
@@ -95,8 +95,12 @@ export const StatsTab: React.FC = () => {
     if (!userId) return
     if (statsList && !statsDirty) return
     refetchAnime().then(res => {
-      const newEntries = res.data?.MediaListCollection?.lists?.[0]?.entries ?? []
-      setStatsList(newEntries)
+      // Flatten all entries from all lists (CURRENT, COMPLETED, etc.)
+      const allLists = res.data?.MediaListCollection?.lists ?? []
+      const allEntries = allLists.flatMap((list: any) => list.entries ?? [])
+      // Filter to only include entries with scores
+      const scoredEntries = allEntries.filter((entry: any) => entry.score > 0)
+      setStatsList(scoredEntries)
       clearStatsDirty()
     })
   }, [userId, statsDirty])
