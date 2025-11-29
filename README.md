@@ -1,6 +1,6 @@
 # AniPortable
 
-_A lightweight browser extension to manage your AniList anime — without leaving your current tab._
+_A lightweight browser extension to manage your AniList anime and manga — without leaving your current tab._
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hinkgmlhncliohmckclnopolbfjinhmb?style=flat-square)](https://chromewebstore.google.com/detail/hinkgmlhncliohmckclnopolbfjinhmb)
 
@@ -8,16 +8,16 @@ _A lightweight browser extension to manage your AniList anime — without leavin
 
 ## Overview
 
-**AniPortable** brings core AniList features directly into your browser, allowing seamless interaction with your anime list. Instantly update episode progress, view statistics, and manage your lists without navigating away from your current tab.
+**AniPortable** brings core AniList features directly into your browser for seamless tracking. Update your anime and manga progress, check your stats, and manage your lists — all without navigating away from what you're doing.
 
 ---
 
 ## Features
 
-- Instantly update episode progress or score using arrow buttons — or click to type an exact number.
-- View your completed anime/manga stats in a bar chart, with filters for year and season.
-- Separate your Watching list into **Behind** and **Caught Up**, so you know exactly what needs attention.
-- Keep anime in Watching even after finishing the last episode — ideal for screenshots or reviews — then move it to Completed with one click.
+- **Quick updates** — Bump episode/chapter progress or scores with arrow buttons, or click to type an exact number
+- **Visual stats** — View your anime and manga stats in bar charts, with year and season filters for anime
+- **Smart organization** — Split your Watching/Reading lists into **Behind** and **Caught Up** so you always know what needs attention
+- **Flexible completion** — Enable manual completion to keep anime/manga in your current list after finishing — great for screenshots or reviews. Then mark complete with one click when you're ready
 
 ---
 
