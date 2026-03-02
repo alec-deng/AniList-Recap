@@ -67,6 +67,62 @@ class AniList {
 
     return response.json()
   }
+
+  // Method to handle mutations from the background
+  async saveMediaListEntry(variables: { id: number; progress?: number; score?: number; status?: string }): Promise<any> {
+    const query = `
+      mutation ($id: Int, $progress: Int, $score: Float, $status: MediaListStatus) {
+        SaveMediaListEntry (id: $id, progress: $progress, score: $score, status: $status) {
+          id
+          progress
+          score
+          status
+        }
+      }
+    `
+
+    const response = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify({ query, variables }),
+    })
+
+    return response.json()
+  }
+}
+
+// ============================================
+// Debouncing Logic
+// ============================================
+const debounceTimers = new Map<number, NodeJS.Timeout>()
+const pendingUpdates = new Map<number, { progress?: number; score?: number; status?: string }>()
+
+async function processUpdate(entryId: number) {
+  const token = await Storage.get<string>(Storage.DATA.ACCESS_TOKEN)
+  const data = pendingUpdates.get(entryId)
+
+  if (token && data) {
+    const api = new AniList(token)
+    await api.saveMediaListEntry({ id: entryId, ...data })
+    console.log(`[Background] Synced entry ${entryId} to AniList`, data)
+    
+    // Cleanup
+    pendingUpdates.delete(entryId)
+    debounceTimers.delete(entryId)
+  }
+}
+
+// Flush all pending updates immediately
+async function flushAllPendingUpdates() {
+  console.log('[Background] Flushing all pending updates...')
+  
+  // Clear all timers
+  debounceTimers.forEach((timer) => clearTimeout(timer))
+  debounceTimers.clear()
+  
+  // Process all pending updates immediately
+  const promises = Array.from(pendingUpdates.keys()).map(entryId => processUpdate(entryId))
+  await Promise.all(promises)
 }
 
 // ============================================
@@ -146,6 +202,31 @@ function broadcastAuthChange() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
+    case "QUEUE_UPDATE":
+      const { entryId, progress, score, status } = message.payload
+      
+      // Merge new changes with existing pending data for this entry
+      const existing = pendingUpdates.get(entryId) || {}
+      pendingUpdates.set(entryId, {
+        ...existing,
+        ...(progress !== undefined && { progress }),
+        ...(score !== undefined && { score }),
+        ...(status !== undefined && { status })
+      })
+
+      // Reset debounce timer
+      if (debounceTimers.has(entryId)) {
+        clearTimeout(debounceTimers.get(entryId))
+      }
+
+      const timer = setTimeout(() => {
+        processUpdate(entryId)
+      }, 5000) // 5-second buffer
+
+      debounceTimers.set(entryId, timer)
+      sendResponse({ status: "queued" })
+      break
+
     case "USER":
       Storage.get(Storage.DATA.USER)
         .then((user) => sendResponse({ user }))
@@ -190,5 +271,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       console.log('Auth data changed in storage, broadcasting...')
       broadcastAuthChange()
     }
+  }
+})
+
+// Flush all pending updates when popup closes
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'popup') {
+    console.log('[Background] Popup connected')
+    
+    port.onDisconnect.addListener(() => {
+      console.log('[Background] Popup disconnected, flushing updates...')
+      flushAllPendingUpdates()
+    })
   }
 })

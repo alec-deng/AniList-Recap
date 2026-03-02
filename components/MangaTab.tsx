@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { useQuery, useMutation, gql } from "@apollo/client"
+import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
@@ -45,43 +45,6 @@ const READING_LIST_QUERY = gql`
   }
 `
 
-const UPDATE_PROGRESS_MUTATION = gql`
-  mutation ($id: Int!, $progress: Int!) {
-    SaveMediaListEntry(id: $id, progress: $progress) {
-      id
-      progress
-    }
-  }
-`
-
-const UPDATE_SCORE_MUTATION = gql`
-  mutation ($id: Int!, $score: Float!) {
-    SaveMediaListEntry(id: $id, score: $score) {
-      id
-      score
-    }
-  }
-`
-
-const MARK_COMPLETED_MUTATION = gql`
-  mutation ($id: Int!) {
-    SaveMediaListEntry(id: $id, status: COMPLETED) {
-      id
-      status
-    }
-  }
-`
-
-const KEEP_CURRENT_MUTATION = gql`
-  mutation ($id: Int!, $progress: Int!) {
-    SaveMediaListEntry(id: $id, progress: $progress, status: CURRENT) {
-      id
-      progress
-      status
-    }
-  }
-`
-
 export const MangaTab: React.FC = () => {
   const {
     profileColor,
@@ -120,11 +83,6 @@ export const MangaTab: React.FC = () => {
     })
   }, [userId, mangaDirty])
 
-  const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
-  const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
-  const [markCompleted] = useMutation(MARK_COMPLETED_MUTATION)
-  const [keepCurrent] = useMutation(KEEP_CURRENT_MUTATION)
-
   // Use cached list if available
   const readingList = mangaList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
@@ -141,7 +99,7 @@ export const MangaTab: React.FC = () => {
     cover: string
     progress: number
     score: number
-    totalEpisodes: number | null
+    totalChapters: number | null
     isAdult: boolean
     updatedAt: string
     mediaId: number
@@ -154,7 +112,7 @@ export const MangaTab: React.FC = () => {
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
-    totalEpisodes: entry.media.chapters,
+    totalChapters: entry.media.chapters,
     isAdult: entry.media.isAdult,
     updatedAt: entry.updatedAt,
     mediaId: entry.media.id
@@ -182,8 +140,7 @@ export const MangaTab: React.FC = () => {
   // Separate entries if setting is enabled
   const completedManga = separateEntries
     ? sortedManga.filter(
-        (manga) =>
-          manga.totalEpisodes && manga.progress >= manga.totalEpisodes
+        (manga) => manga.totalChapters && manga.progress >= manga.totalChapters
       )
     : []
 
@@ -191,33 +148,65 @@ export const MangaTab: React.FC = () => {
     ? sortedManga.filter((manga) => !completedManga.includes(manga))
     : sortedManga
 
-  // Handle manual progress change
-  const handleProgressChange = async (manga: any, newProgress: number) => {
-    const maxChapters = manga.totalEpisodes || 999
+  // Helper for Optimistic UI updates
+  const updateLocalList = (entryId: number, updates: Partial<any>) => {
+    if (mangaList) {
+      const updated = mangaList.map(entry => 
+        entry.id === entryId ? { ...entry, ...updates } : entry
+      )
+      setMangaList(updated)
+    }
+  }
+
+  const handleProgressChange = (manga: any, newProgress: number) => {
+    const maxChapters = manga.totalChapters || 9999
     const clampedProgress = Math.min(Math.max(0, newProgress), maxChapters)
-    await updateProgress({ variables: { id: manga.id, progress: clampedProgress } })
+    
+    // Local UI Update
+    updateLocalList(manga.id, { progress: clampedProgress })
+
+    // Queue for background sync
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: manga.id, progress: clampedProgress }
+    })
 
     // Update stats if finished and not manual completion
-    if (manga.totalEpisodes && clampedProgress >= manga.totalEpisodes) {
+    if (manga.totalChapters && clampedProgress >= manga.totalChapters) {
       if (manualCompletion) {
-        await keepCurrent({ variables: { id: manga.id, progress: clampedProgress } })
+        chrome.runtime.sendMessage({
+          action: "QUEUE_UPDATE",
+          payload: { entryId: manga.id, status: "CURRENT" }
+        })
       } else {
         markMangaStatsDirty()
       }
     }
-    
-    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  const handleScoreChange = async (manga: any, score: number) => {
-    await updateScore({ variables: { id: manga.id, score } })
-    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+  const handleScoreChange = (manga: any, score: number) => {
+    // Local UI Update
+    updateLocalList(manga.id, { score })
+
+    // Queue for background sync
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: manga.id, score }
+    })
   }
 
-  const handleMarkCompleted = async (manga: any) => {
-    await markCompleted({ variables: { id: manga.id } })
+  const handleMarkCompleted = (manga: any) => {
+    // Instant local removal
+    if (mangaList) {
+      setMangaList(mangaList.filter(item => item.id !== manga.id))
+    }
     markMangaStatsDirty()
-    refetch().then((res) => setMangaList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+
+    // Queue to background
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: manga.id, status: "COMPLETED" }
+    })
   }
 
   const renderMangaGrid = (mangaList: any[], title: string) => (

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { useQuery, useMutation, gql } from "@apollo/client"
+import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
@@ -47,43 +47,6 @@ const WATCHING_LIST_QUERY = gql`
   }
 `
 
-const UPDATE_PROGRESS_MUTATION = gql`
-  mutation ($id: Int!, $progress: Int!) {
-    SaveMediaListEntry(id: $id, progress: $progress) {
-      id
-      progress
-    }
-  }
-`
-
-const UPDATE_SCORE_MUTATION = gql`
-  mutation ($id: Int!, $score: Float!) {
-    SaveMediaListEntry(id: $id, score: $score) {
-      id
-      score
-    }
-  }
-`
-
-const MARK_COMPLETED_MUTATION = gql`
-  mutation ($id: Int!) {
-    SaveMediaListEntry(id: $id, status: COMPLETED) {
-      id
-      status
-    }
-  }
-`
-
-const KEEP_CURRENT_MUTATION = gql`
-  mutation ($id: Int!, $progress: Int!) {
-    SaveMediaListEntry(id: $id, progress: $progress, status: CURRENT) {
-      id
-      progress
-      status
-    }
-  }
-`
-
 export const AnimeTab: React.FC = () => {
   const {
     profileColor,
@@ -122,12 +85,6 @@ export const AnimeTab: React.FC = () => {
     })
   }, [userId, animeDirty])
 
-  const [updateProgress] = useMutation(UPDATE_PROGRESS_MUTATION)
-  const [updateScore] = useMutation(UPDATE_SCORE_MUTATION)
-  const [markCompleted] = useMutation(MARK_COMPLETED_MUTATION)
-  const [keepCurrent] = useMutation(KEEP_CURRENT_MUTATION)
-
-  // Use cached list if available
   const watchingList = animeList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
 
   // Early return when loading or getting an error
@@ -197,33 +154,65 @@ export const AnimeTab: React.FC = () => {
     ? sortedAnime.filter((anime) => !caughtUpAnime.includes(anime))
     : sortedAnime
 
-  // Handle manual progress change
-  const handleProgressChange = async (anime: any, newProgress: number) => {
+  // Helper for Local UI updates
+  const updateLocalList = (entryId: number, updates: Partial<any>) => {
+    if (animeList) {
+      const updated = animeList.map(entry => 
+        entry.id === entryId ? { ...entry, ...updates } : entry
+      )
+      setAnimeList(updated)
+    }
+  }
+
+  const handleProgressChange = (anime: any, newProgress: number) => {
     const maxEpisodes = anime.totalEpisodes || 999
     const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
-    await updateProgress({ variables: { id: anime.id, progress: clampedProgress } })
+    
+    // Local UI Update
+    updateLocalList(anime.id, { progress: clampedProgress })
+
+    // Queue for background sync
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: anime.id, progress: clampedProgress }
+    })
 
     // Update stats if finished and not manual completion
     if (anime.totalEpisodes && clampedProgress >= anime.totalEpisodes) {
       if (manualCompletion) {
-        await keepCurrent({ variables: { id: anime.id, progress: clampedProgress } })
+        chrome.runtime.sendMessage({
+          action: "QUEUE_UPDATE",
+          payload: { entryId: anime.id, status: "CURRENT" }
+        })
       } else {
         markStatsDirty()
       }
     }
-    
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
   }
 
-  const handleScoreChange = async (anime: any, score: number) => {
-    await updateScore({ variables: { id: anime.id, score } })
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+  const handleScoreChange = (anime: any, score: number) => {
+    // Local UI Update
+    updateLocalList(anime.id, { score })
+
+    // Queue for background sync
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: anime.id, score }
+    })
   }
 
-  const handleMarkCompleted = async (anime: any) => {
-    await markCompleted({ variables: { id: anime.id } })
+  const handleMarkCompleted = (anime: any) => {
+    // Instant local removal (mark as completed)
+    if (animeList) {
+      setAnimeList(animeList.filter(item => item.id !== anime.id))
+    }
     markStatsDirty()
-    refetch().then((res) => setAnimeList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? []))
+
+    // Queue to background
+    chrome.runtime.sendMessage({
+      action: "QUEUE_UPDATE",
+      payload: { entryId: anime.id, status: "COMPLETED" }
+    })
   }
 
   const renderAnimeGrid = (animeList: any[], title: string) => (

@@ -180,6 +180,7 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleProgressInputChange(e.target.value)}
                 onBlur={handleProgressInputBlur}
                 onKeyDown={handleProgressInputKeyDown}
+                onFocus={(e) => e.currentTarget.select()}
                 className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,
@@ -249,6 +250,7 @@ export const AnimeCard: React.FC<Props> = ({
                 onChange={(e) => handleScoreInputChange(e.target.value)}
                 onBlur={handleScoreInputBlur}
                 onKeyDown={handleScoreInputKeyDown}
+                onFocus={(e) => e.currentTarget.select()}
                 className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,

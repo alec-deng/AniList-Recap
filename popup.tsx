@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
 import { AniListDataProvider } from "./contexts/AniListDataContext"
 import { ApolloProvider } from "@apollo/client"
@@ -67,6 +67,14 @@ function PopupContent() {
 }
 
 function Popup() {
+  useEffect(() => {
+    // Connect to background script to detect when popup closes
+    const port = chrome.runtime.connect({ name: 'popup' })
+    return () => {
+      port.disconnect()
+    }
+  }, [])
+
   return (
     <ApolloProvider client={client}>
       <SettingsProvider>

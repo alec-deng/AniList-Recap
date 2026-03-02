@@ -1,6 +1,6 @@
 {
   "name": "aniportable",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "private": true,
   "dependencies": {
     "@apollo/client": "3.8.10",
@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.1.1",
+    "@types/node": "^25.3.3",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "autoprefixer": "^10.4.21",
@@ -32,7 +33,7 @@
   "manifest": {
     "manifest_version": 3,
     "name": "AniPortable",
-    "version": "1.2",
+    "version": "1.3.0",
     "description": "Track and update your AniList anime & manga without leaving your current tab!",
     "permissions": [
       "storage",
