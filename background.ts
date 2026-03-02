@@ -89,40 +89,54 @@ class AniList {
 
     return response.json()
   }
+
+  // Minimal addition: Bulk method
+  async saveBulkMediaListEntries(entries: Map<number, any>) {
+    const mutationParts = Array.from(entries.entries()).map(([id, data]) => {
+      const args = [`id: ${id}`]
+      if (data.progress !== undefined) args.push(`progress: ${data.progress}`)
+      if (data.score !== undefined) args.push(`score: ${data.score}`)
+      if (data.status !== undefined) args.push(`status: ${data.status}`)
+      return `m${id}: SaveMediaListEntry(${args.join(", ")}) { id }`
+    })
+
+    const query = `mutation { ${mutationParts.join("\n")} }`
+
+    return fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify({ query }),
+    })
+  }
 }
 
 // ============================================
 // Debouncing Logic
 // ============================================
-const debounceTimers = new Map<number, NodeJS.Timeout>()
+let globalDebounceTimer: NodeJS.Timeout | null = null
 const pendingUpdates = new Map<number, { progress?: number; score?: number; status?: string }>()
 
-async function processUpdate(entryId: number) {
-  const token = await Storage.get<string>(Storage.DATA.ACCESS_TOKEN)
-  const data = pendingUpdates.get(entryId)
-
-  if (token && data) {
-    const api = new AniList(token)
-    await api.saveMediaListEntry({ id: entryId, ...data })
-    console.log(`[Background] Synced entry ${entryId} to AniList`, data)
-    
-    // Cleanup
-    pendingUpdates.delete(entryId)
-    debounceTimers.delete(entryId)
-  }
-}
-
-// Flush all pending updates immediately
 async function flushAllPendingUpdates() {
-  console.log('[Background] Flushing all pending updates...')
+  if (pendingUpdates.size === 0) return
   
-  // Clear all timers
-  debounceTimers.forEach((timer) => clearTimeout(timer))
-  debounceTimers.clear()
-  
-  // Process all pending updates immediately
-  const promises = Array.from(pendingUpdates.keys()).map(entryId => processUpdate(entryId))
-  await Promise.all(promises)
+  if (globalDebounceTimer) {
+    clearTimeout(globalDebounceTimer)
+    globalDebounceTimer = null
+  }
+
+  const token = await Storage.get<string>(Storage.DATA.ACCESS_TOKEN)
+  if (!token) return
+
+  try {
+    const api = new AniList(token)
+    const updatesToFlush = new Map(pendingUpdates)
+    pendingUpdates.clear()
+
+    await api.saveBulkMediaListEntries(updatesToFlush)
+    console.log('[Background] Bulk sync completed')
+  } catch (error) {
+    console.error("[Background] Failed to flush updates:", error)
+  }
 }
 
 // ============================================
@@ -172,6 +186,8 @@ class Auth {
   }
 
   static async logout() {
+    // Flush before clearing storage
+    await flushAllPendingUpdates()
     await Promise.all([
       Storage.remove(Storage.DATA.ACCESS_TOKEN),
       Storage.remove(Storage.DATA.USER),
@@ -201,66 +217,68 @@ function broadcastAuthChange() {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.action) {
-    case "QUEUE_UPDATE":
-      const { entryId, progress, score, status } = message.payload
-      
-      // Merge new changes with existing pending data for this entry
-      const existing = pendingUpdates.get(entryId) || {}
-      pendingUpdates.set(entryId, {
-        ...existing,
-        ...(progress !== undefined && { progress }),
-        ...(score !== undefined && { score }),
-        ...(status !== undefined && { status })
-      })
-
-      // Reset debounce timer
-      if (debounceTimers.has(entryId)) {
-        clearTimeout(debounceTimers.get(entryId))
-      }
-
-      const timer = setTimeout(() => {
-        processUpdate(entryId)
-      }, 5000) // 5-second buffer
-
-      debounceTimers.set(entryId, timer)
-      sendResponse({ status: "queued" })
-      break
-
-    case "USER":
-      Storage.get(Storage.DATA.USER)
-        .then((user) => sendResponse({ user }))
-        .catch((error) => sendResponse({ error: error.message }))
-      break
-
-    case "LOGIN":
-      Auth.login()
-        .then((user) => {
-          sendResponse({ user })
-          broadcastAuthChange()
+  const handleMessage = async () => {
+    switch (message.action) {
+      case "QUEUE_UPDATE":
+        const { entryId, progress, score, status } = message.payload
+        
+        // Merge new changes with existing pending data for this entry
+        const existing = pendingUpdates.get(entryId) || {}
+        pendingUpdates.set(entryId, {
+          ...existing,
+          ...(progress !== undefined && { progress }),
+          ...(score !== undefined && { score }),
+          ...(status !== undefined && { status })
         })
-        .catch((error) => sendResponse({ error: error.message }))
-      break
 
-    case "LOGOUT":
-      Auth.logout()
-        .then(() => {
-          sendResponse({})
-          broadcastAuthChange()
-        })
-        .catch((error) => sendResponse({ error: error.message }))
-      break
+        // Reset debounce timer
+        if (globalDebounceTimer) {
+          clearTimeout(globalDebounceTimer)
+        }
 
-    case "CHECK_AUTH":
-      Promise.all([
-        Storage.get(Storage.DATA.ACCESS_TOKEN),
+        globalDebounceTimer = setTimeout(() => {
+          flushAllPendingUpdates()
+        }, 5000) // 5-second buffer
+
+        sendResponse({ status: "queued" })
+        break
+
+      case "USER":
         Storage.get(Storage.DATA.USER)
-      ])
-        .then(([token, user]) => sendResponse({ token, user }))
-        .catch((error) => sendResponse({ error: error.message }))
-      break
+          .then((user) => sendResponse({ user }))
+          .catch((error) => sendResponse({ error: error.message }))
+        break
+
+      case "LOGIN":
+        Auth.login()
+          .then((user) => {
+            sendResponse({ user })
+            broadcastAuthChange()
+          })
+          .catch((error) => sendResponse({ error: error.message }))
+        break
+
+      case "LOGOUT":
+        Auth.logout()
+          .then(() => {
+            sendResponse({})
+            broadcastAuthChange()
+          })
+          .catch((error) => sendResponse({ error: error.message }))
+        break
+
+      case "CHECK_AUTH":
+        Promise.all([
+          Storage.get(Storage.DATA.ACCESS_TOKEN),
+          Storage.get(Storage.DATA.USER)
+        ])
+          .then(([token, user]) => sendResponse({ token, user }))
+          .catch((error) => sendResponse({ error: error.message }))
+        break
+    }
   }
   
+  handleMessage()
   return true // Keep listener active for async response
 })
 
@@ -268,7 +286,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local') {
     if (changes[Storage.DATA.ACCESS_TOKEN] || changes[Storage.DATA.USER]) {
-      console.log('Auth data changed in storage, broadcasting...')
       broadcastAuthChange()
     }
   }
@@ -277,10 +294,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 // Flush all pending updates when popup closes
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name === 'popup') {
-    console.log('[Background] Popup connected')
-    
     port.onDisconnect.addListener(() => {
-      console.log('[Background] Popup disconnected, flushing updates...')
       flushAllPendingUpdates()
     })
   }
