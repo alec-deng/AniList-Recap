@@ -28,6 +28,8 @@ class Storage {
 // ============================================
 // AniList API
 // ============================================
+const ANILIST_GRAPHQL_URL = "https://graphql.anilist.co/";
+
 class AniList {
   #accessToken: string
 
@@ -59,7 +61,7 @@ class AniList {
       }
     `
 
-    const response = await fetch("https://graphql.anilist.co", {
+    const response = await fetch(ANILIST_GRAPHQL_URL, {
       method: "POST",
       headers: this.#headers(),
       body: JSON.stringify({ query }),
@@ -81,7 +83,7 @@ class AniList {
       }
     `
 
-    const response = await fetch("https://graphql.anilist.co", {
+    const response = await fetch(ANILIST_GRAPHQL_URL, {
       method: "POST",
       headers: this.#headers(),
       body: JSON.stringify({ query, variables }),
@@ -102,11 +104,13 @@ class AniList {
 
     const query = `mutation { ${mutationParts.join("\n")} }`
 
-    return fetch("https://graphql.anilist.co", {
+    const response = await fetch(ANILIST_GRAPHQL_URL, {
       method: "POST",
       headers: this.#headers(),
       body: JSON.stringify({ query }),
     })
+
+    return response.json()
   }
 }
 
