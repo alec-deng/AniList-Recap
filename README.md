@@ -44,10 +44,10 @@ _A lightweight browser extension to manage your AniList anime and manga — with
 To run AniPortable locally:
 
 1. Clone the repository.
-2. Register your app with [AniList API](https://anilist.co/settings/developer) and obtain a `client_id`.
-3. Create the file `config/auth.config.ts` to store your credentials securely. This file is `.gitignore`d for security.
+2. Register your app with [AniList API](https://anilist.co/settings/developer) and obtain a `client_id`. Its **Redirect URL** must be `https://<extension-id>.chromiumapp.org/`, where `<extension-id>` is the ID Chrome assigns your locally-loaded unpacked extension (visible on `chrome://extensions` after your first load).
+3. Copy `.env.example` to `.env.development` (used by `npx plasmo dev`) and/or `.env.production` (used by `npx plasmo build`), and set `PLASMO_PUBLIC_ANILIST_CLIENT_ID` to your `client_id` in each. Both files are `.gitignore`d, so dev and production can safely use different AniList apps.
 4. Run `npm install` to install dependencies.
-5. Use `npx plasmo build` to build locally with Plasmo.
+5. Use `npx plasmo dev` (watch mode) or `npx plasmo build` (production build) to build locally with Plasmo.
 
 
 ## Permissions
@@ -56,6 +56,7 @@ AniPortable requests the following Chrome Extension permissions:
 
 - **storage** – Persists user settings and preferences locally.
 - **identity** – Used to authenticate users through AniList via `chrome.identity.launchWebAuthFlow`.
+- **host_permissions** (`https://graphql.anilist.co/`) – Allows the background script to call the AniList GraphQL API directly.
 
 These are minimal and used solely to deliver core functionality securely and privately.
 

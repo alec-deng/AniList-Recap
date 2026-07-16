@@ -4,7 +4,7 @@ import { setContext } from "@apollo/client/link/context"
 // Helper to get token from chrome.storage.local
 const getToken = async (): Promise<string | null> =>
   new Promise((resolve) => {
-    chrome.storage.local.get("accessToken", (result) => {
+    chrome.storage.local.get<{ accessToken?: string }>("accessToken", (result) => {
       resolve(result.accessToken ?? null)
     })
   })

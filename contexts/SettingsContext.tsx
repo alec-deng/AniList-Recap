@@ -91,13 +91,13 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [settingsData])
 
-  const localSettings = new Promise((resolve => {
-    chrome.storage.local.get(['manualCompletion', 'separateEntries'], (result) => {
+  // Load local-only settings once on mount
+  useEffect(() => {
+    chrome.storage.local.get<{ manualCompletion?: boolean; separateEntries?: boolean }>(['manualCompletion', 'separateEntries'], (result) => {
       setManualCompletionState(result.manualCompletion || false)
       setSeparateEntriesState(result.separateEntries || false)
-      resolve(true)
     })
-  }))
+  }, [])
 
   const setProfileColor = async (color: string) => {
     setProfileColorState(color)

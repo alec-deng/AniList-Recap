@@ -1,4 +1,4 @@
-import { AUTH_CONFIG } from "./config/auth.config"
+export {}
 
 // ============================================
 // Storage Management
@@ -7,6 +7,7 @@ class Storage {
   static DATA = {
     ACCESS_TOKEN: "accessToken",
     USER: "user",
+    PENDING_UPDATES: "pendingUpdates",
   }
 
   static async set(key: string, data: unknown): Promise<void> {
@@ -117,12 +118,34 @@ class AniList {
 // ============================================
 // Debouncing Logic
 // ============================================
-let globalDebounceTimer: NodeJS.Timeout | null = null
-const pendingUpdates = new Map<number, { progress?: number; score?: number; status?: string }>()
+// The MV3 service worker can be terminated by the browser while a plain
+// setTimeout is pending, which would otherwise drop queued edits silently.
+// Pending updates are mirrored to chrome.storage.local so they survive a
+// worker restart, and are re-queued (not discarded) if the sync call fails.
+type PendingUpdate = { progress?: number; score?: number; status?: string }
+
+let globalDebounceTimer: ReturnType<typeof setTimeout> | null = null
+const pendingUpdates = new Map<number, PendingUpdate>()
+
+async function persistPendingUpdates(): Promise<void> {
+  await Storage.set(Storage.DATA.PENDING_UPDATES, Array.from(pendingUpdates.entries()))
+}
+
+async function restorePendingUpdates(): Promise<void> {
+  const saved = await Storage.get<[number, PendingUpdate][]>(Storage.DATA.PENDING_UPDATES)
+  if (!saved || saved.length === 0) return
+
+  for (const [id, data] of saved) {
+    pendingUpdates.set(id, data)
+  }
+
+  // Flush what survived the restart instead of waiting for the next edit
+  flushAllPendingUpdates()
+}
 
 async function flushAllPendingUpdates() {
   if (pendingUpdates.size === 0) return
-  
+
   if (globalDebounceTimer) {
     clearTimeout(globalDebounceTimer)
     globalDebounceTimer = null
@@ -131,28 +154,49 @@ async function flushAllPendingUpdates() {
   const token = await Storage.get<string>(Storage.DATA.ACCESS_TOKEN)
   if (!token) return
 
+  const updatesToFlush = new Map(pendingUpdates)
+  pendingUpdates.clear()
+
   try {
     const api = new AniList(token)
-    const updatesToFlush = new Map(pendingUpdates)
-    pendingUpdates.clear()
-
     await api.saveBulkMediaListEntries(updatesToFlush)
+    await Storage.remove(Storage.DATA.PENDING_UPDATES)
     console.log('[Background] Bulk sync completed')
   } catch (error) {
-    console.error("[Background] Failed to flush updates:", error)
+    console.error("[Background] Failed to flush updates, will retry later:", error)
+    // Re-queue so the update isn't lost; merge in case new edits arrived meanwhile
+    for (const [id, data] of updatesToFlush) {
+      pendingUpdates.set(id, { ...data, ...pendingUpdates.get(id) })
+    }
+    await persistPendingUpdates()
   }
 }
+
+// Pick up any updates left over from a previous service worker instance
+restorePendingUpdates()
 
 // ============================================
 // Authentication
 // ============================================
 class Auth {
-  static CLIENT_ID = AUTH_CONFIG.clientId
+  // Set via .env.development (npx plasmo dev) / .env.production (npx plasmo build)
+  static CLIENT_ID = process.env.PLASMO_PUBLIC_ANILIST_CLIENT_ID
 
   static async login() {
+    if (!this.CLIENT_ID) {
+      throw new Error(
+        "Missing PLASMO_PUBLIC_ANILIST_CLIENT_ID. Copy .env.example to .env.development (or .env.production) and set your AniList client_id."
+      )
+    }
+
     const authUrl = new URL("https://anilist.co/api/v2/oauth/authorize")
-    authUrl.searchParams.append("client_id", this.CLIENT_ID.toString())
+    authUrl.searchParams.append("client_id", this.CLIENT_ID)
     authUrl.searchParams.append("response_type", "token")
+    // Cache-bust: if the user closes/cancels the auth window, Chrome can fail
+    // a subsequent launchWebAuthFlow call immediately ("Authorization page
+    // could not be loaded") when given the exact same URL as the cancelled
+    // attempt. A unique state param forces each attempt to be treated as new.
+    authUrl.searchParams.append("state", crypto.randomUUID())
 
     let redirectUrl: string | undefined
 
@@ -234,6 +278,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           ...(score !== undefined && { score }),
           ...(status !== undefined && { status })
         })
+        await persistPendingUpdates()
 
         // Reset debounce timer
         if (globalDebounceTimer) {
