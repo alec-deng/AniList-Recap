@@ -43,19 +43,39 @@ _A lightweight browser extension to manage your AniList anime and manga — with
 
 To run AniPortable locally:
 
-1. Clone the repository.
-2. Register your app with [AniList API](https://anilist.co/settings/developer) and obtain a `client_id`. Its **Redirect URL** must be `https://<extension-id>.chromiumapp.org/`, where `<extension-id>` is the ID Chrome assigns your locally-loaded unpacked extension (visible on `chrome://extensions` after your first load).
-3. Copy `.env.example` to `.env.development` (used by `npx plasmo dev`) and/or `.env.production` (used by `npx plasmo build`), and set `PLASMO_PUBLIC_ANILIST_CLIENT_ID` to your `client_id` in each. Both files are `.gitignore`d, so dev and production can safely use different AniList apps.
-4. Run `npm install` to install dependencies.
-5. Use `npx plasmo dev` (watch mode) or `npx plasmo build` (production build) to build locally with Plasmo.
+1. Clone the repository and run `npm install`.
+2. Register an app with the [AniList API](https://anilist.co/settings/developer), setting its **Redirect URL** to the one for your build (see below), and copy the `client_id`.
+3. Copy `.env.example` to the matching env file and set `PLASMO_PUBLIC_ANILIST_CLIENT_ID` to that `client_id`. Every `.env*` file except the example is `.gitignore`d.
+4. Build and load the extension (see [Builds](#builds)).
+
+AniList allows one Redirect URL per app, so each build needs its own app and `client_id`:
+
+| Build | Env file | Redirect URL |
+| --- | --- | --- |
+| Chrome, unpacked | `.env.development` | `https://<extension-id>.chromiumapp.org/` — ID is on `chrome://extensions` |
+| Chrome, Web Store | `.env.production` | Same, with the Web Store's (different) `<extension-id>` |
+| Firefox | `.env.firefox` | `https://2aa74d67c20b2df7e53c4ece72190bec8c657d82.extensions.allizom.org/` |
+
+Chrome assigns the extension ID, and gives the unpacked and Web Store builds different ones — hence two Chrome apps. Firefox instead uses the ID declared in `browser_specific_settings.gecko.id` and derives the Redirect URL as `https://<sha1(id)>.extensions.allizom.org/`, which is identical for a temporary install and the signed AMO build — so one Firefox app covers both.
+
+### Builds
+
+| Command | Output |
+| --- | --- |
+| `npx plasmo dev` | `build/chrome-mv3-dev` (watch/HMR) |
+| `npx plasmo build` | `build/chrome-mv3-prod` |
+| `npx plasmo build --target=firefox-mv3` | `build/firefox-mv3-prod` |
+| `npx plasmo package [--target=firefox-mv3]` | Zipped build, for store submission |
+
+Load the Chrome build with **Load unpacked** on `chrome://extensions`, or the Firefox build with **Load Temporary Add-on** on `about:debugging#/runtime/this-firefox`. On a `--target=firefox-*` build, `.env.firefox` outranks `.env.production`, so the Firefox `client_id` is picked up automatically.
 
 
 ## Permissions
 
-AniPortable requests the following Chrome Extension permissions:
+AniPortable requests the following browser extension permissions:
 
 - **storage** – Persists user settings and preferences locally.
-- **identity** – Used to authenticate users through AniList via `chrome.identity.launchWebAuthFlow`.
+- **identity** – Used to authenticate users through AniList via `identity.launchWebAuthFlow`.
 - **host_permissions** (`https://graphql.anilist.co/`) – Allows the background script to call the AniList GraphQL API directly.
 
 These are minimal and used solely to deliver core functionality securely and privately.

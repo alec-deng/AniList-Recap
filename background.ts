@@ -180,12 +180,13 @@ restorePendingUpdates()
 // ============================================
 class Auth {
   // Set via .env.development (npx plasmo dev) / .env.production (npx plasmo build)
+  // / .env.firefox (build --target=firefox-mv3)
   static CLIENT_ID = process.env.PLASMO_PUBLIC_ANILIST_CLIENT_ID
 
   static async login() {
     if (!this.CLIENT_ID) {
       throw new Error(
-        "Missing PLASMO_PUBLIC_ANILIST_CLIENT_ID. Copy .env.example to .env.development (or .env.production) and set your AniList client_id."
+        "Missing PLASMO_PUBLIC_ANILIST_CLIENT_ID. Copy .env.example to .env.development (or .env.production, or .env.firefox) and set your AniList client_id."
       )
     }
 

@@ -45,6 +45,17 @@
     "background": {
       "service_worker": "background.ts",
       "type": "module"
+    },
+    "browser_specific_settings": {
+      "gecko": {
+        "id": "aniportable@arimakana.github.io",
+        "strict_min_version": "140.0",
+        "data_collection_permissions": {
+          "required": [
+            "authenticationInfo"
+          ]
+        }
+      }
     }
   }
 }
