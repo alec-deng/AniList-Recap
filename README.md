@@ -3,6 +3,7 @@
 _A lightweight browser extension to manage your AniList anime and manga — without leaving your current tab._
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hinkgmlhncliohmckclnopolbfjinhmb?style=flat-square)](https://chromewebstore.google.com/detail/hinkgmlhncliohmckclnopolbfjinhmb)
+[![Mozilla Add-on](https://img.shields.io/amo/v/YOUR_FIREFOX_ADDON_SLUG?style=flat-square&color=orange)](https://addons.mozilla.org/en-US/firefox/addon/aniportable/)
 
 
 ## Overview
