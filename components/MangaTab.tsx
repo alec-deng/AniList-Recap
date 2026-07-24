@@ -1,9 +1,10 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { StateMessage } from "./StateMessage"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
+import { useStableOrder } from "../hooks/useStableOrder"
 import { Loader2, AlertCircle, BookOpen } from "lucide-react"
 import { getErrorMessage } from "../lib/apolloErrors"
 
@@ -75,6 +76,12 @@ export const MangaTab: React.FC = () => {
     skip: !userId
   })
 
+  // Tracks how many cards currently have the mouse over them (0 or 1 in
+  // practice, but a counter avoids any enter/leave ordering glitches)
+  const [hoverCount, setHoverCount] = useState(0)
+  const handleHoverChange = (isHovering: boolean) =>
+    setHoverCount((count) => count + (isHovering ? 1 : -1))
+
   // Only refetch if there's no cache or it's marked dirty
   useEffect(() => {
     if (!userId) return
@@ -88,18 +95,6 @@ export const MangaTab: React.FC = () => {
 
   // Use cached list if available
   const readingList = mangaList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
-
-  // Early return when loading or getting an error
-  if (viewerLoading || loading)
-    return <StateMessage icon={Loader2} spin message="Loading your manga list..." />
-  if (viewerError || error)
-    return (
-      <StateMessage
-        icon={AlertCircle}
-        tone="error"
-        message={getErrorMessage(viewerError || error, "Error loading manga list.")}
-      />
-    )
 
   // Define the manga type
   type MangaEntry = {
@@ -156,6 +151,25 @@ export const MangaTab: React.FC = () => {
   const readingManga = separateEntries
     ? sortedManga.filter((manga) => !completedManga.includes(manga))
     : sortedManga
+
+  // Freeze grid position while a card is hovered, so adjusting a score/
+  // progress value can't re-sort a different card under the cursor mid-click
+  const hovering = hoverCount > 0
+  const orderedSortedManga = useStableOrder(sortedManga, hovering)
+  const orderedReadingManga = useStableOrder(readingManga, hovering)
+  const orderedCompletedManga = useStableOrder(completedManga, hovering)
+
+  // Early return when loading or getting an error
+  if (viewerLoading || loading)
+    return <StateMessage icon={Loader2} spin message="Loading your manga list..." />
+  if (viewerError || error)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(viewerError || error, "Error loading manga list.")}
+      />
+    )
 
   // Helper for Optimistic UI updates
   const updateLocalList = (entryId: number, updates: Partial<any>) => {
@@ -236,6 +250,7 @@ export const MangaTab: React.FC = () => {
             scoreFormat={scoreFormat}
             manualCompletion={manualCompletion}
             displayAdultContent={displayAdultContent}
+            onHoverChange={handleHoverChange}
           />
         ))}
       </div>
@@ -259,17 +274,17 @@ export const MangaTab: React.FC = () => {
           {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
           {readingManga.length > 0 && completedManga.length > 0 ? (
             <>
-              {renderMangaGrid(readingManga, "Reading")}
-              {renderMangaGrid(completedManga, "Completed")}
+              {renderMangaGrid(orderedReadingManga, "Reading")}
+              {renderMangaGrid(orderedCompletedManga, "Completed")}
             </>
           ) : readingManga.length > 0 ? (
-            renderMangaGrid(readingManga, "Reading")
+            renderMangaGrid(orderedReadingManga, "Reading")
           ) : (
-            renderMangaGrid(completedManga, "Completed")
+            renderMangaGrid(orderedCompletedManga, "Completed")
           )}
         </>
       ) : (
-        renderMangaGrid(sortedManga, "Reading")
+        renderMangaGrid(orderedSortedManga, "Reading")
       )}
     </div>
   )

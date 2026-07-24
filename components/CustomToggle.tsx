@@ -21,14 +21,14 @@ export const CustomToggle: React.FC<CustomToggleProps> = ({
   profileColor = "#3db4f2"
 }) => {
   return (
-    <div className={`flex border border-gray/30 rounded-lg bg-white-100 p-0.5 ${className}`}>
+    <div className={`flex border border-gray/30 rounded-lg bg-white-100 p-[3px] ${className}`}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           onClick={() => onChange(option.value)}
           className={`
-            flex-1 py-1.5 text-sm font-medium rounded-md transition-all duration-200
+            flex-1 py-1 text-sm font-medium rounded-md transition-all duration-200
             ${value === option.value ? 'text-white-100' : 'text-gray hover:text-gray'}
           `}
           style={{

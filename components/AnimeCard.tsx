@@ -21,6 +21,7 @@ type Props = {
   scoreFormat: string
   manualCompletion: boolean
   displayAdultContent: boolean
+  onHoverChange?: (hovering: boolean) => void
 }
 
 const getMaxScore = (format: string): number => {
@@ -43,7 +44,8 @@ export const AnimeCard: React.FC<Props> = ({
   loading,
   scoreFormat,
   manualCompletion,
-  displayAdultContent
+  displayAdultContent,
+  onHoverChange
 }) => {
   const [score, setScore] = useState(anime.score)
   const [progress, setProgress] = useState(anime.progress)
@@ -141,6 +143,8 @@ export const AnimeCard: React.FC<Props> = ({
   return (
     <div
       className="relative w-full aspect-[3/4] overflow-hidden rounded-lg shadow-md transition-all duration-200 group"
+      onMouseEnter={() => onHoverChange?.(true)}
+      onMouseLeave={() => onHoverChange?.(false)}
       style={{
         backgroundImage: `url(${anime.cover})`,
         backgroundSize: 'cover',

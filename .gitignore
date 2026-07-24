@@ -2,7 +2,6 @@ node_modules
 .plasmo
 .vscode
 build
-CLAUDE.md
 .claude
 .env*
 !.env.example

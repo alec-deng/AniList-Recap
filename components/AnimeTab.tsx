@@ -1,9 +1,10 @@
-import React, { useEffect } from "react"
+import React, { useEffect, useState } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
 import { StateMessage } from "./StateMessage"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
+import { useStableOrder } from "../hooks/useStableOrder"
 import { Loader2, AlertCircle, Tv } from "lucide-react"
 import { getErrorMessage } from "../lib/apolloErrors"
 
@@ -77,6 +78,12 @@ export const AnimeTab: React.FC = () => {
     skip: !userId
   })
 
+  // Tracks how many cards currently have the mouse over them (0 or 1 in
+  // practice, but a counter avoids any enter/leave ordering glitches)
+  const [hoverCount, setHoverCount] = useState(0)
+  const handleHoverChange = (isHovering: boolean) =>
+    setHoverCount((count) => count + (isHovering ? 1 : -1))
+
   // Only refetch if there's no cache or it's marked dirty
   useEffect(() => {
     if (!userId) return
@@ -89,18 +96,6 @@ export const AnimeTab: React.FC = () => {
   }, [userId, animeDirty])
 
   const watchingList = animeList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
-
-  // Early return when loading or getting an error
-  if (viewerLoading || loading)
-    return <StateMessage icon={Loader2} spin message="Loading your anime list..." />
-  if (viewerError || error)
-    return (
-      <StateMessage
-        icon={AlertCircle}
-        tone="error"
-        message={getErrorMessage(viewerError || error, "Error loading anime list.")}
-      />
-    )
 
   // Define the anime type
   type AnimeEntry = {
@@ -116,7 +111,6 @@ export const AnimeTab: React.FC = () => {
     mediaId: number
   }
 
-  
   // Transform entries to our anime format
   const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
     id: entry.id,
@@ -132,7 +126,7 @@ export const AnimeTab: React.FC = () => {
   }))
 
   // Filter adult content based on settings
-  const filteredAnime = transformedAnime.filter((anime: AnimeEntry) => 
+  const filteredAnime = transformedAnime.filter((anime: AnimeEntry) =>
     displayAdultContent || !anime.isAdult
   )
 
@@ -162,6 +156,25 @@ export const AnimeTab: React.FC = () => {
   const behindAnime = separateEntries
     ? sortedAnime.filter((anime) => !caughtUpAnime.includes(anime))
     : sortedAnime
+
+  // Freeze grid position while a card is hovered, so adjusting a score/
+  // progress value can't re-sort a different card under the cursor mid-click
+  const hovering = hoverCount > 0
+  const orderedSortedAnime = useStableOrder(sortedAnime, hovering)
+  const orderedBehindAnime = useStableOrder(behindAnime, hovering)
+  const orderedCaughtUpAnime = useStableOrder(caughtUpAnime, hovering)
+
+  // Early return when loading or getting an error
+  if (viewerLoading || loading)
+    return <StateMessage icon={Loader2} spin message="Loading your anime list..." />
+  if (viewerError || error)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(viewerError || error, "Error loading anime list.")}
+      />
+    )
 
   // Helper for Local UI updates
   const updateLocalList = (entryId: number, updates: Partial<any>) => {
@@ -242,6 +255,7 @@ export const AnimeTab: React.FC = () => {
             scoreFormat={scoreFormat}
             manualCompletion={manualCompletion}
             displayAdultContent={displayAdultContent}
+            onHoverChange={handleHoverChange}
           />
         ))}
       </div>
@@ -265,17 +279,17 @@ export const AnimeTab: React.FC = () => {
           {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
           {behindAnime.length > 0 && caughtUpAnime.length > 0 ? (
             <>
-              {renderAnimeGrid(behindAnime, "Behind")}
-              {renderAnimeGrid(caughtUpAnime, "Caught-Up")}
+              {renderAnimeGrid(orderedBehindAnime, "Behind")}
+              {renderAnimeGrid(orderedCaughtUpAnime, "Caught-Up")}
             </>
           ) : behindAnime.length > 0 ? (
-            renderAnimeGrid(behindAnime, "Behind")
+            renderAnimeGrid(orderedBehindAnime, "Behind")
           ) : (
-            renderAnimeGrid(caughtUpAnime, "Caught-Up")
+            renderAnimeGrid(orderedCaughtUpAnime, "Caught-Up")
           )}
         </>
       ) : (
-        renderAnimeGrid(sortedAnime, "Watching")
+        renderAnimeGrid(orderedSortedAnime, "Watching")
       )}
     </div>
   )
