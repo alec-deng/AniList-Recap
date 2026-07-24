@@ -1,8 +1,11 @@
 import React, { useEffect } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
+import { StateMessage } from "./StateMessage"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
+import { Loader2, AlertCircle, Tv } from "lucide-react"
+import { getErrorMessage } from "../lib/apolloErrors"
 
 const VIEWER_QUERY = gql`
   query {
@@ -66,7 +69,7 @@ export const AnimeTab: React.FC = () => {
     clearAnimeDirty
   } = useAniListData()
 
-  const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
+  const { data: viewerData, loading: viewerLoading, error: viewerError } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
   const { data, loading, error, refetch } = useQuery(WATCHING_LIST_QUERY, {
@@ -89,9 +92,15 @@ export const AnimeTab: React.FC = () => {
 
   // Early return when loading or getting an error
   if (viewerLoading || loading)
-    return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
-  if (error)
-    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading anime list.</div>
+    return <StateMessage icon={Loader2} spin message="Loading your anime list..." />
+  if (viewerError || error)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(viewerError || error, "Error loading anime list.")}
+      />
+    )
 
   // Define the anime type
   type AnimeEntry = {
@@ -239,9 +248,19 @@ export const AnimeTab: React.FC = () => {
     </div>
   )
 
+  const isEmpty = separateEntries
+    ? behindAnime.length === 0 && caughtUpAnime.length === 0
+    : sortedAnime.length === 0
+
   return (
-    <div className="p-4">
-      {separateEntries ? (
+    <div className="p-4 flex-1 flex flex-col">
+      {isEmpty ? (
+        <StateMessage
+          icon={Tv}
+          title="No Anime In Progress"
+          message="Anime you're currently watching will show up here."
+        />
+      ) : separateEntries ? (
         <>
           {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
           {behindAnime.length > 0 && caughtUpAnime.length > 0 ? (
@@ -251,10 +270,8 @@ export const AnimeTab: React.FC = () => {
             </>
           ) : behindAnime.length > 0 ? (
             renderAnimeGrid(behindAnime, "Behind")
-          ) : caughtUpAnime.length > 0 ? (
-            renderAnimeGrid(caughtUpAnime, "Caught-Up")
           ) : (
-            renderAnimeGrid([], "Watching")
+            renderAnimeGrid(caughtUpAnime, "Caught-Up")
           )}
         </>
       ) : (

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { useQuery, gql } from "@apollo/client"
+import { useQuery, gql, type ApolloError } from "@apollo/client"
 
 const VIEWER_QUERY = gql`
   query {
@@ -47,6 +47,7 @@ interface SettingsContextType {
   setShowAnimeStats: (show: boolean) => void
   setShowMangaStats: (show: boolean) => void
   loading: boolean
+  error: ApolloError | undefined
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
@@ -78,14 +79,16 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showMangaStats, setShowMangaStatsState] = useState<boolean>(true)
 
   // Get user ID first
-  const { data: viewerData } = useQuery(VIEWER_QUERY)
+  const { data: viewerData, error: viewerError } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
   // Get user settings
-  const { data: settingsData, loading } = useQuery(SETTINGS_QUERY, {
+  const { data: settingsData, loading, error: settingsError } = useQuery(SETTINGS_QUERY, {
     variables: { userId },
     skip: !userId
   })
+
+  const error = viewerError || settingsError
 
   // Update state when settings are fetched
   useEffect(() => {
@@ -183,7 +186,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setTabVisibility,
       setShowAnimeStats,
       setShowMangaStats,
-      loading
+      loading,
+      error
     }}>
       {children}
     </SettingsContext.Provider>

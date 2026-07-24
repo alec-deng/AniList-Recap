@@ -139,8 +139,8 @@ export const AnimeCard: React.FC<Props> = ({
   const showCompletionButton = manualCompletion && anime.totalEpisodes !== null && progress >= anime.totalEpisodes
 
   return (
-    <div 
-      className="relative w-full aspect-[3/4] overflow-hidden transition-all duration-200 group"
+    <div
+      className="relative w-full aspect-[3/4] overflow-hidden rounded-lg shadow-md transition-all duration-200 group"
       style={{
         backgroundImage: `url(${anime.cover})`,
         backgroundSize: 'cover',
@@ -203,9 +203,9 @@ export const AnimeCard: React.FC<Props> = ({
             <span className="text-xs flash-on-group-hover" style={{ color: profileColor }}>
               {anime.totalEpisodes && `/${anime.totalEpisodes}`}
             </span>
-            <div className="flex flex-col ml-1 opacity-0 group-hover:opacity-100 duration-150">
+            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 group-hover:opacity-100 duration-150">
               <button
-                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
                 onClick={() => handleProgressChange(progress + 1)}
                 disabled={loading || (anime.totalEpisodes !== null && progress >= anime.totalEpisodes)}
@@ -213,7 +213,7 @@ export const AnimeCard: React.FC<Props> = ({
                 <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
               </button>
               <button
-                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
                 onClick={() => handleProgressChange(progress - 1)}
                 disabled={loading || progress <= 0}
@@ -225,9 +225,9 @@ export const AnimeCard: React.FC<Props> = ({
           
           {/* Score section - aligned right */}
           <div className="flex items-center">
-            <div className="flex flex-col mr-1 opacity-0 group-hover:opacity-100 duration-150">
+            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 group-hover:opacity-100 duration-150">
               <button
-                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
                 onClick={() => handleScoreChange(score + 1)}
                 disabled={loading || score >= maxScore}
@@ -235,7 +235,7 @@ export const AnimeCard: React.FC<Props> = ({
                 <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
               </button>
               <button
-                className="text-xs w-4 h-3 flex items-center justify-center leading-none"
+                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
                 onClick={() => handleScoreChange(score - 1)}
                 disabled={loading || score <= 0}

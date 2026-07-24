@@ -1,8 +1,11 @@
 import React, { useEffect } from "react"
 import { useQuery, gql } from "@apollo/client"
 import { AnimeCard } from "./AnimeCard"
+import { StateMessage } from "./StateMessage"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
+import { Loader2, AlertCircle, BookOpen } from "lucide-react"
+import { getErrorMessage } from "../lib/apolloErrors"
 
 const VIEWER_QUERY = gql`
   query {
@@ -64,7 +67,7 @@ export const MangaTab: React.FC = () => {
     clearMangaDirty
   } = useAniListData()
 
-  const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
+  const { data: viewerData, loading: viewerLoading, error: viewerError } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
   const { data, loading, error, refetch } = useQuery(READING_LIST_QUERY, {
@@ -88,9 +91,15 @@ export const MangaTab: React.FC = () => {
 
   // Early return when loading or getting an error
   if (viewerLoading || loading)
-    return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
-  if (error)
-    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading manga list.</div>
+    return <StateMessage icon={Loader2} spin message="Loading your manga list..." />
+  if (viewerError || error)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(viewerError || error, "Error loading manga list.")}
+      />
+    )
 
   // Define the manga type
   type MangaEntry = {
@@ -233,9 +242,19 @@ export const MangaTab: React.FC = () => {
     </div>
   )
 
+  const isEmpty = separateEntries
+    ? readingManga.length === 0 && completedManga.length === 0
+    : sortedManga.length === 0
+
   return (
-    <div className="p-4">
-      {separateEntries ? (
+    <div className="p-4 flex-1 flex flex-col">
+      {isEmpty ? (
+        <StateMessage
+          icon={BookOpen}
+          title="No Manga In Progress"
+          message="Manga you're currently reading will show up here."
+        />
+      ) : separateEntries ? (
         <>
           {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
           {readingManga.length > 0 && completedManga.length > 0 ? (
@@ -245,10 +264,8 @@ export const MangaTab: React.FC = () => {
             </>
           ) : readingManga.length > 0 ? (
             renderMangaGrid(readingManga, "Reading")
-          ) : completedManga.length > 0 ? (
-            renderMangaGrid(completedManga, "Completed")
           ) : (
-            renderMangaGrid([], "Reading")
+            renderMangaGrid(completedManga, "Completed")
           )}
         </>
       ) : (

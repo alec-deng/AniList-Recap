@@ -6,6 +6,9 @@ import { useAuth } from "../hooks/useAuth"
 import { CustomSelect } from './CustomSelect'
 import { CustomCheckbox } from './CustomCheckbox'
 import { CustomToggle } from './CustomToggle'
+import { StateMessage } from './StateMessage'
+import { Loader2, AlertCircle } from 'lucide-react'
+import { getErrorMessage } from '../lib/apolloErrors'
 import HelpIcon from '@mui/icons-material/Help';
 
 const UPDATE_PROFILE_COLOR = gql`
@@ -90,7 +93,8 @@ export const SettingsTab: React.FC = () => {
     setTabVisibility,
     setShowAnimeStats,
     setShowMangaStats,
-    loading
+    loading,
+    error
   } = useSettings()
 
   const {
@@ -177,10 +181,18 @@ export const SettingsTab: React.FC = () => {
     setTabVisibility(visibility as 'both' | 'anime' | 'manga')
   }
 
-  if (loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
+  if (error)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(error, "Error loading settings.")}
+      />
+    )
+  if (loading) return <StateMessage icon={Loader2} spin message="Loading settings..." />
 
   return (
-    <div className="p-4 space-y-5">
+    <div className="p-4 space-y-5 flex-1">
       {/* Profile Color */}
       <div>
         <h3 className="text-sm font-medium mb-2 text-gray">Profile Color</h3>

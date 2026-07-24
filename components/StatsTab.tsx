@@ -4,9 +4,11 @@ import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
 import { ScoreChart } from "./ScoreChart"
 import { CustomSelect } from "./CustomSelect"
-import { MonitorCheck, BookOpen, Percent, BarChart3 } from "lucide-react"
+import { MonitorCheck, BookOpen, Percent, BarChart3, Loader2, AlertCircle } from "lucide-react"
 import CancelIcon from "@mui/icons-material/Cancel"
 import * as Slider from "@radix-ui/react-slider"
+import { StateMessage } from "./StateMessage"
+import { getErrorMessage } from "../lib/apolloErrors"
 
 const COMPLETED_ANIME_QUERY = gql`
   query ($userId: Int) {
@@ -79,7 +81,7 @@ export const StatsTab: React.FC = () => {
   const [season, setSeason] = useState<string>("All")
   const [isSliderActive, setIsSliderActive] = useState(false)
 
-  const { data: viewerData, loading: viewerLoading } = useQuery(VIEWER_QUERY)
+  const { data: viewerData, loading: viewerLoading, error: viewerError } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
   const { loading: animeLoading, error: animeError, refetch: refetchAnime } = useQuery(COMPLETED_ANIME_QUERY, {
@@ -190,26 +192,28 @@ export const StatsTab: React.FC = () => {
   // Nothing to fetch or show if both lists are hidden from Stats
   if (!showAnimeStats && !showMangaStats) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
-        <div className="flex justify-center items-center w-12 h-12 rounded-full bg-white-100 shadow-lg mb-4">
-          <BarChart3 size={22} className="text-gray" />
-        </div>
-        <h3 className="text-base font-semibold text-gray mb-2">No Stats Selected</h3>
-        <p className="text-sm text-gray leading-relaxed max-w-[280px]">
-          Enable "Show in Stats" for Anime or Manga in Settings to view your statistics here.
-        </p>
-      </div>
+      <StateMessage
+        icon={BarChart3}
+        title="No Stats Selected"
+        message='Enable "Show in Stats" for Anime or Manga in Settings to view your statistics here.'
+      />
     )
   }
 
   // Early return when loading or getting an error
   if (viewerLoading || animeLoading || mangaLoading)
-    return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
-  if (animeError || mangaError)
-    return <div className="p-4 text-sm text-red tracking-wide font-semibold">Error loading stats.</div>
+    return <StateMessage icon={Loader2} spin message="Loading your stats..." />
+  if (viewerError || animeError || mangaError)
+    return (
+      <StateMessage
+        icon={AlertCircle}
+        tone="error"
+        message={getErrorMessage(viewerError || animeError || mangaError, "Error loading stats.")}
+      />
+    )
 
   return (
-    <div className="p-2">
+    <div className="p-2 flex-1 flex flex-col">
 
       {/* Anime Stats Section */}
       {showAnimeStats && (

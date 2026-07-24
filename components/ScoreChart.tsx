@@ -77,7 +77,6 @@ const CustomXAxisTick = ({ x, y, payload, scoreFormat }: any) => {
 
 export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
   const { profileColor, scoreFormat } = useSettings()
-  console.log("allScores:", allScores)
 
   // Convert scores to strings for proper category handling
   const completeData = allScores.map(score => {
