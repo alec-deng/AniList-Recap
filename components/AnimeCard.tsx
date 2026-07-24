@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import '../styles/animation.css'
 
 type Anime = {
@@ -55,7 +55,29 @@ export const AnimeCard: React.FC<Props> = ({
   const [tempScore, setTempScore] = useState(anime.score.toString())
   const maxScore = getMaxScore(scoreFormat)
   const maxEpisodes = anime.totalEpisodes || 999
-  
+
+  // If this card is removed (e.g. marked completed) while the mouse is still
+  // over it, the browser never fires mouseleave — the element is gone, not
+  // moved away from — so the parent's hover count would stay inflated
+  // forever. Release it on unmount if we were still hovered.
+  const isHoveredRef = useRef(false)
+  const handleMouseEnter = () => {
+    isHoveredRef.current = true
+    onHoverChange?.(true)
+  }
+  const handleMouseLeave = () => {
+    isHoveredRef.current = false
+    onHoverChange?.(false)
+  }
+  useEffect(() => {
+    return () => {
+      if (isHoveredRef.current) {
+        onHoverChange?.(false)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Don't render adult content if setting is disabled
   if (anime.isAdult && !displayAdultContent) {
     return null
@@ -143,8 +165,8 @@ export const AnimeCard: React.FC<Props> = ({
   return (
     <div
       className="relative w-full aspect-[3/4] overflow-hidden rounded-lg shadow-md transition-all duration-200 group"
-      onMouseEnter={() => onHoverChange?.(true)}
-      onMouseLeave={() => onHoverChange?.(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{
         backgroundImage: `url(${anime.cover})`,
         backgroundSize: 'cover',
@@ -154,7 +176,7 @@ export const AnimeCard: React.FC<Props> = ({
     >
       {/* Completion button - top center, show on hover */}
       {showCompletionButton && (
-        <div className="absolute top-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
           <button
             className="w-full text-white px-2 py-1 rounded text-xs font-medium shadow-lg"
             style={{ backgroundColor: profileColor }}
@@ -207,7 +229,7 @@ export const AnimeCard: React.FC<Props> = ({
             <span className="text-xs flash-on-group-hover" style={{ color: profileColor }}>
               {anime.totalEpisodes && `/${anime.totalEpisodes}`}
             </span>
-            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 group-hover:opacity-100 duration-150">
+            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
               <button
                 className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
@@ -229,7 +251,7 @@ export const AnimeCard: React.FC<Props> = ({
           
           {/* Score section - aligned right */}
           <div className="flex items-center">
-            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 group-hover:opacity-100 duration-150">
+            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
               <button
                 className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 style={{ color: profileColor }}
