@@ -35,6 +35,22 @@ const getMaxScore = (format: string): number => {
   }
 }
 
+// Drawn with CSS borders instead of a "▲"/"▼" glyph so it renders identically
+// across browsers — font fallback for that glyph differs enough between
+// Chrome and Firefox that the two buttons could visually overlap.
+const ArrowIcon: React.FC<{ direction: 'up' | 'down'; color: string }> = ({ direction, color }) => (
+  <span
+    className="block w-0 h-0"
+    style={{
+      borderLeft: '4.5px solid transparent',
+      borderRight: '4.5px solid transparent',
+      ...(direction === 'up'
+        ? { borderBottom: `6px solid ${color}` }
+        : { borderTop: `6px solid ${color}` })
+    }}
+  />
+)
+
 export const AnimeCard: React.FC<Props> = ({
   anime,
   profileColor,
@@ -231,20 +247,18 @@ export const AnimeCard: React.FC<Props> = ({
             </span>
             <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
               <button
-                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                style={{ color: profileColor }}
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleProgressChange(progress + 1)}
                 disabled={loading || (anime.totalEpisodes !== null && progress >= anime.totalEpisodes)}
               >
-                <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
+                <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
-                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                style={{ color: profileColor }}
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleProgressChange(progress - 1)}
                 disabled={loading || progress <= 0}
               >
-                <span className="scale-x-[0.90] scale-y-[0.75]">▼</span>
+                <ArrowIcon direction="down" color={profileColor} />
               </button>
             </div>
           </div>
@@ -253,20 +267,18 @@ export const AnimeCard: React.FC<Props> = ({
           <div className="flex items-center">
             <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
               <button
-                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                style={{ color: profileColor }}
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleScoreChange(score + 1)}
                 disabled={loading || score >= maxScore}
               >
-                <span className="scale-x-[0.90] scale-y-[0.75]">▲</span>
+                <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
-                className="w-4 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                style={{ color: profileColor }}
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleScoreChange(score - 1)}
                 disabled={loading || score <= 0}
               >
-                <span className="scale-x-[0.90] scale-y-[0.75]">▼</span>
+                <ArrowIcon direction="down" color={profileColor} />
               </button>
             </div>
             {isEditingScore ? (

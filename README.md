@@ -2,8 +2,7 @@
 
 _A lightweight browser extension to manage your AniList anime and manga — without leaving your current tab._
 
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hinkgmlhncliohmckclnopolbfjinhmb?style=flat-square)](https://chromewebstore.google.com/detail/hinkgmlhncliohmckclnopolbfjinhmb)
-[![Mozilla Add-on](https://img.shields.io/amo/v/aniportable?style=flat-square&color=orange)](https://addons.mozilla.org/en-US/firefox/addon/aniportable/)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hinkgmlhncliohmckclnopolbfjinhmb?style=flat-square)](https://chromewebstore.google.com/detail/hinkgmlhncliohmckclnopolbfjinhmb) [![Mozilla Add-on](https://img.shields.io/amo/v/aniportable?style=flat-square&color=orange)](https://addons.mozilla.org/en-US/firefox/addon/aniportable/)
 
 
 ## Overview
@@ -23,19 +22,12 @@ _A lightweight browser extension to manage your AniList anime and manga — with
 
 <table>
   <tr>
-    <th>Anime & Manga List</th>
-    <th>Stats</th>
-    <th>Settings</th>
+    <td width="50%"><img src="./screenshots/screenshot-1-anime.jpg" width="100%"/></td>
+    <td width="50%"><img src="./screenshots/screenshot-2-manga.jpg" width="100%"/></td>
   </tr>
   <tr>
-    <td width="33%"><img src="./screenshots/anime.png" width="100%"/></td>
-    <td width="33%"><img src="./screenshots/stats1.png" width="100%"/></td>
-    <td width="33%"><img src="./screenshots/settings1.png" width="100%"/></td>
-  </tr>
-  <tr>
-    <td width="33%"><img src="./screenshots/manga.png" width="100%"/></td>
-    <td width="33%"><img src="./screenshots/stats2.png" width="100%"/></td>
-    <td width="33%"><img src="./screenshots/settings2.png" width="100%"/></td>
+    <td width="50%"><img src="./screenshots/screenshot-3-stats.jpg" width="100%"/></td>
+    <td width="50%"><img src="./screenshots/screenshot-4-settings.jpg" width="100%"/></td>
   </tr>
 </table>
 
