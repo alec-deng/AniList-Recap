@@ -4,7 +4,7 @@ import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
 import { ScoreChart } from "./ScoreChart"
 import { CustomSelect } from "./CustomSelect"
-import { MonitorCheck, BookOpen, Percent } from "lucide-react"
+import { MonitorCheck, BookOpen, Percent, BarChart3 } from "lucide-react"
 import CancelIcon from "@mui/icons-material/Cancel"
 import * as Slider from "@radix-ui/react-slider"
 
@@ -58,7 +58,9 @@ export const StatsTab: React.FC = () => {
   const {
     profileColor,
     displayAdultContent,
-    scoreFormat
+    scoreFormat,
+    showAnimeStats,
+    showMangaStats
   } = useSettings()
 
   const {
@@ -185,6 +187,21 @@ export const StatsTab: React.FC = () => {
     return Object.entries(counts).map(([score, count]) => ({ score: Number(score), count }))
   }, [filteredManga])
 
+  // Nothing to fetch or show if both lists are hidden from Stats
+  if (!showAnimeStats && !showMangaStats) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-center px-10">
+        <div className="flex justify-center items-center w-12 h-12 rounded-full bg-white-100 shadow-lg mb-4">
+          <BarChart3 size={22} className="text-gray" />
+        </div>
+        <h3 className="text-base font-semibold text-gray mb-2">No Stats Selected</h3>
+        <p className="text-sm text-gray leading-relaxed max-w-[280px]">
+          Enable "Show in Stats" for Anime or Manga in Settings to view your statistics here.
+        </p>
+      </div>
+    )
+  }
+
   // Early return when loading or getting an error
   if (viewerLoading || animeLoading || mangaLoading)
     return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
@@ -195,6 +212,7 @@ export const StatsTab: React.FC = () => {
     <div className="p-2">
 
       {/* Anime Stats Section */}
+      {showAnimeStats && (
       <div className="mb-8 mt-4">
         <h3 className="text-xl text-gray font-bold text-center mb-2">Anime Stats</h3>
         
@@ -292,8 +310,10 @@ export const StatsTab: React.FC = () => {
           <ScoreChart data={animeScoreData} allScores={animeAllScores} />
         </div>
       </div>
+      )}
 
       {/* Manga Stats Section */}
+      {showMangaStats && (
       <div>
         <h3 className="text-xl text-gray font-bold text-center mb-2">Manga Stats</h3>
         
@@ -328,6 +348,7 @@ export const StatsTab: React.FC = () => {
           <ScoreChart data={mangaScoreData} allScores={mangaAllScores} />
         </div>
       </div>
+      )}
     </div>
   )
 }

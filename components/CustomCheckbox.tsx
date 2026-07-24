@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 
 interface CustomCheckboxProps {
@@ -17,6 +17,10 @@ export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
   profileColor = "#3db4f2"
 }) => {
   const [isChecked, setIsChecked] = useState(checked);
+
+  useEffect(() => {
+    setIsChecked(checked);
+  }, [checked]);
 
   const handleChange = () => {
     const newChecked = !isChecked;

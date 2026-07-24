@@ -13,21 +13,41 @@ import { useAuth } from "./hooks/useAuth"
 import { SquareArrowOutUpRight  } from "lucide-react"
 import "./styles/popup.css"
 
-const TAB_NAMES = ["Anime List", "Manga List", "Stats", "Settings"]
+const TAB_DEFS = [
+  { key: "anime", label: "Anime List", Component: AnimeTab },
+  { key: "manga", label: "Manga List", Component: MangaTab },
+  { key: "stats", label: "Stats", Component: StatsTab },
+  { key: "settings", label: "Settings", Component: SettingsTab }
+]
 
 function PopupContent() {
-  const [selectedTab, setSelectedTab] = useState(0)
+  const [selectedKey, setSelectedKey] = useState("anime")
   const { user } = useAuth()
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
-  const { profileColor } = useSettings()
+  const { profileColor, tabVisibility } = useSettings()
+
+  const visibleTabs = TAB_DEFS.filter(({ key }) => {
+    if (key === "anime") return tabVisibility !== "manga"
+    if (key === "manga") return tabVisibility !== "anime"
+    return true
+  })
+
+  useEffect(() => {
+    if (!visibleTabs.some(({ key }) => key === selectedKey)) {
+      setSelectedKey(visibleTabs[0].key)
+    }
+  }, [tabVisibility])
 
   if (!user) {
     return <LoginPage />
   }
 
+  const selectedIndex = visibleTabs.findIndex(({ key }) => key === selectedKey)
+  const SelectedComponent = visibleTabs[selectedIndex]?.Component
+
   return (
-    <div className="w-[500px] min-h-[400px]">
+    <div className="w-[500px] min-h-[400px] flex flex-col">
       <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#12162a]">
         {/* Avatar and Username */}
         <div className="flex items-center space-x-4">
@@ -55,12 +75,13 @@ function PopupContent() {
         </a>
       </div>
 
-      <Tabs tabs={TAB_NAMES} selected={selectedTab} onSelect={setSelectedTab} />
-      <div className="bg-white">
-        {selectedTab === 0 && <AnimeTab />}
-        {selectedTab === 1 && <MangaTab />}
-        {selectedTab === 2 && <StatsTab />}
-        {selectedTab === 3 && <SettingsTab />}
+      <Tabs
+        tabs={visibleTabs.map(({ label }) => label)}
+        selected={selectedIndex}
+        onSelect={(idx) => setSelectedKey(visibleTabs[idx].key)}
+      />
+      <div className="bg-white flex-1 flex flex-col">
+        {SelectedComponent && <SelectedComponent />}
       </div>
     </div>
   )

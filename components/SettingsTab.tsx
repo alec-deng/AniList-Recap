@@ -5,6 +5,7 @@ import { useAniListData } from "../contexts/AniListDataContext"
 import { useAuth } from "../hooks/useAuth"
 import { CustomSelect } from './CustomSelect'
 import { CustomCheckbox } from './CustomCheckbox'
+import { CustomToggle } from './CustomToggle'
 import HelpIcon from '@mui/icons-material/Help';
 
 const UPDATE_PROFILE_COLOR = gql`
@@ -76,6 +77,9 @@ export const SettingsTab: React.FC = () => {
     rowOrder,
     manualCompletion,
     separateEntries,
+    tabVisibility,
+    showAnimeStats,
+    showMangaStats,
     setProfileColor,
     setTitleLanguage,
     setDisplayAdultContent,
@@ -83,6 +87,9 @@ export const SettingsTab: React.FC = () => {
     setRowOrder,
     setManualCompletion,
     setSeparateEntries,
+    setTabVisibility,
+    setShowAnimeStats,
+    setShowMangaStats,
     loading
   } = useSettings()
 
@@ -166,6 +173,10 @@ export const SettingsTab: React.FC = () => {
     setSeparateEntries(separate)
   }
 
+  const handleTabVisibilityChange = async (visibility: string) => {
+    setTabVisibility(visibility as 'both' | 'anime' | 'manga')
+  }
+
   if (loading) return <div className="p-4 text-sm text-gray tracking-wide font-semibold">Loading...</div>
 
   return (
@@ -246,49 +257,92 @@ export const SettingsTab: React.FC = () => {
         />
       </div>
 
-      {/* Manual Completion */}
-      <div className="flex items-center space-x-2">
-        <CustomCheckbox
-          checked={manualCompletion}
-          onChange={handleManualCompletionChange}
-          label="Manually Mark As Completed"
-          profileColor={profileColor}
-          className="space-x-1 text-sm text-gray"
-        />
-        <div className="relative group">
-          <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
-          <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-            When enabled, anime/manga stay in your list even after completing all episodes/chapters. A one-click complete button will appear to manually mark them as completed.
-          </div>
-        </div>
-      </div>
-
-      {/* Separate Entries */}
-      <div className="flex items-center space-x-2">
-        <CustomCheckbox
-          checked={separateEntries}
-          onChange={handleSeparateEntriesChange}
-          label="Separate Caught-Up Entries"
-          profileColor={profileColor}
-          className="space-x-1 text-sm text-gray"
-        />
-        <div className="relative group">
-          <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
-          <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-            When enabled, anime/manga that you've caught up to (watched/read all available episodes/chapters) are shown separately from those with remaining content.
-          </div>
-        </div>
-      </div>
-
-      {/* Adult Content */}
+      {/* Tab Visibility */}
       <div>
-        <CustomCheckbox
-          checked={displayAdultContent}
-          onChange={handleAdultContentChange}
-          label="Display 18+ Content"
+        <h3 className="text-sm font-medium mb-2 text-gray">Media Type</h3>
+        <CustomToggle
+          options={[
+            { label: "Both", value: "both" },
+            { label: "Anime", value: "anime" },
+            { label: "Manga", value: "manga" }
+          ]}
+          value={tabVisibility}
+          onChange={handleTabVisibilityChange}
           profileColor={profileColor}
-          className="space-x-1 text-sm text-gray"
+          className="w-full"
         />
+      </div>
+
+      {/* Stats Visibility */}
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-gray">Show in Stats</h3>
+        <div className="flex items-center gap-6">
+          <CustomCheckbox
+            checked={showAnimeStats}
+            onChange={setShowAnimeStats}
+            label="Anime"
+            profileColor={profileColor}
+            className="space-x-1 text-sm text-gray"
+          />
+          <CustomCheckbox
+            checked={showMangaStats}
+            onChange={setShowMangaStats}
+            label="Manga"
+            profileColor={profileColor}
+            className="space-x-1 text-sm text-gray"
+          />
+        </div>
+      </div>
+
+      {/* Preferences */}
+      <div>
+        <h3 className="text-sm font-medium mb-2 text-gray">Preferences</h3>
+        <div className="space-y-3">
+          {/* Manual Completion */}
+          <div className="flex items-center space-x-2">
+            <CustomCheckbox
+              checked={manualCompletion}
+              onChange={handleManualCompletionChange}
+              label="Manually Mark As Completed"
+              profileColor={profileColor}
+              className="space-x-1 text-sm text-gray"
+            />
+            <div className="relative group">
+              <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
+              <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
+                When enabled, anime/manga stay in your list even after completing all episodes/chapters. A one-click complete button will appear to manually mark them as completed.
+              </div>
+            </div>
+          </div>
+
+          {/* Separate Entries */}
+          <div className="flex items-center space-x-2">
+            <CustomCheckbox
+              checked={separateEntries}
+              onChange={handleSeparateEntriesChange}
+              label="Separate Caught-Up Entries"
+              profileColor={profileColor}
+              className="space-x-1 text-sm text-gray"
+            />
+            <div className="relative group">
+              <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
+              <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
+                When enabled, anime/manga that you've caught up to (watched/read all available episodes/chapters) are shown separately from those with remaining content.
+              </div>
+            </div>
+          </div>
+
+          {/* Adult Content */}
+          <div>
+            <CustomCheckbox
+              checked={displayAdultContent}
+              onChange={handleAdultContentChange}
+              label="Display 18+ Content"
+              profileColor={profileColor}
+              className="space-x-1 text-sm text-gray"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Logout */}
