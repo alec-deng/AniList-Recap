@@ -20,16 +20,14 @@ _A lightweight browser extension to manage your AniList anime and manga — with
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td width="50%"><img src="./screenshots/screenshot-1-anime.jpg" width="100%"/></td>
-    <td width="50%"><img src="./screenshots/screenshot-2-manga.jpg" width="100%"/></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="./screenshots/screenshot-3-stats.jpg" width="100%"/></td>
-    <td width="50%"><img src="./screenshots/screenshot-4-settings.jpg" width="100%"/></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="./screenshots/screenshot-1-anime.jpg" width="49%"/>
+  <img src="./screenshots/screenshot-2-manga.jpg" width="49%"/>
+</p>
+<p align="center">
+  <img src="./screenshots/screenshot-3-stats.jpg" width="49%"/>
+  <img src="./screenshots/screenshot-4-settings.jpg" width="49%"/>
+</p>
 
 
 ## Getting Started

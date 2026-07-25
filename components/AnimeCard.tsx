@@ -19,9 +19,11 @@ type Props = {
   onProgressChange: (progress: number) => void
   loading?: boolean
   scoreFormat: string
-  manualCompletion: boolean
   displayAdultContent: boolean
   onHoverChange?: (hovering: boolean) => void
+  // Fallback cap used only when the media has no known total (e.g. an
+  // ongoing series AniList hasn't set a final count for yet).
+  maxProgressFallback?: number
 }
 
 const getMaxScore = (format: string): number => {
@@ -59,9 +61,9 @@ export const AnimeCard: React.FC<Props> = ({
   onProgressChange,
   loading,
   scoreFormat,
-  manualCompletion,
   displayAdultContent,
-  onHoverChange
+  onHoverChange,
+  maxProgressFallback = 9999
 }) => {
   const [score, setScore] = useState(anime.score)
   const [progress, setProgress] = useState(anime.progress)
@@ -70,7 +72,7 @@ export const AnimeCard: React.FC<Props> = ({
   const [tempProgress, setTempProgress] = useState(anime.progress.toString())
   const [tempScore, setTempScore] = useState(anime.score.toString())
   const maxScore = getMaxScore(scoreFormat)
-  const maxEpisodes = anime.totalEpisodes || 999
+  const maxEpisodes = anime.totalEpisodes || maxProgressFallback
 
   // If this card is removed (e.g. marked completed) while the mouse is still
   // over it, the browser never fires mouseleave — the element is gone, not
@@ -175,8 +177,11 @@ export const AnimeCard: React.FC<Props> = ({
     }
   }
 
-  // Show completion button only when progress equals total episodes
-  const showCompletionButton = manualCompletion && anime.totalEpisodes !== null && progress >= anime.totalEpisodes
+  // Shown whenever progress has reached the total, regardless of the
+  // manualCompletion setting — otherwise an entry that reached max while the
+  // setting was on (or was already maxed when fetched) has no way to finish
+  // once the setting is off, since nothing else would trigger completion.
+  const showCompletionButton = anime.totalEpisodes !== null && progress >= anime.totalEpisodes
 
   return (
     <div

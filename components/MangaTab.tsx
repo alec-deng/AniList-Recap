@@ -103,7 +103,7 @@ export const MangaTab: React.FC = () => {
     cover: string
     progress: number
     score: number
-    totalChapters: number | null
+    totalEpisodes: number | null
     isAdult: boolean
     updatedAt: string
     mediaId: number
@@ -116,7 +116,7 @@ export const MangaTab: React.FC = () => {
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
-    totalChapters: entry.media.chapters,
+    totalEpisodes: entry.media.chapters,
     isAdult: entry.media.isAdult,
     updatedAt: entry.updatedAt,
     mediaId: entry.media.id
@@ -144,7 +144,7 @@ export const MangaTab: React.FC = () => {
   // Separate entries if setting is enabled
   const completedManga = separateEntries
     ? sortedManga.filter(
-        (manga) => manga.totalChapters && manga.progress >= manga.totalChapters
+        (manga) => manga.totalEpisodes && manga.progress >= manga.totalEpisodes
       )
     : []
 
@@ -182,11 +182,22 @@ export const MangaTab: React.FC = () => {
   }
 
   const handleProgressChange = (manga: any, newProgress: number) => {
-    const maxChapters = manga.totalChapters || 9999
+    const maxChapters = manga.totalEpisodes || 9999
     const clampedProgress = Math.min(Math.max(0, newProgress), maxChapters)
-    
-    // Local UI Update
-    updateLocalList(manga.id, { progress: clampedProgress })
+    const finished = manga.totalEpisodes && clampedProgress >= manga.totalEpisodes
+
+    if (finished && !manualCompletion) {
+      // AniList completes the entry server-side once progress hits the
+      // total, so remove it locally now instead of leaving a stale card
+      // until the popup is closed and reopened
+      if (mangaList) {
+        setMangaList(mangaList.filter(item => item.id !== manga.id))
+      }
+      markMangaStatsDirty()
+    } else {
+      // Local UI Update
+      updateLocalList(manga.id, { progress: clampedProgress })
+    }
 
     // Queue for background sync
     chrome.runtime.sendMessage({
@@ -194,16 +205,11 @@ export const MangaTab: React.FC = () => {
       payload: { entryId: manga.id, progress: clampedProgress }
     })
 
-    // Update stats if finished and not manual completion
-    if (manga.totalChapters && clampedProgress >= manga.totalChapters) {
-      if (manualCompletion) {
-        chrome.runtime.sendMessage({
-          action: "QUEUE_UPDATE",
-          payload: { entryId: manga.id, status: "CURRENT" }
-        })
-      } else {
-        markMangaStatsDirty()
-      }
+    if (finished && manualCompletion) {
+      chrome.runtime.sendMessage({
+        action: "QUEUE_UPDATE",
+        payload: { entryId: manga.id, status: "CURRENT" }
+      })
     }
   }
 
@@ -248,7 +254,6 @@ export const MangaTab: React.FC = () => {
             onProgressChange={(progress) => handleProgressChange(manga, progress)}
             loading={loading}
             scoreFormat={scoreFormat}
-            manualCompletion={manualCompletion}
             displayAdultContent={displayAdultContent}
             onHoverChange={handleHoverChange}
           />

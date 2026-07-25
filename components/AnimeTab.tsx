@@ -187,11 +187,22 @@ export const AnimeTab: React.FC = () => {
   }
 
   const handleProgressChange = (anime: any, newProgress: number) => {
-    const maxEpisodes = anime.totalEpisodes || 999
+    const maxEpisodes = anime.totalEpisodes || 9999
     const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
-    
-    // Local UI Update
-    updateLocalList(anime.id, { progress: clampedProgress })
+    const finished = anime.totalEpisodes && clampedProgress >= anime.totalEpisodes
+
+    if (finished && !manualCompletion) {
+      // AniList completes the entry server-side once progress hits the
+      // total, so remove it locally now instead of leaving a stale card
+      // until the popup is closed and reopened
+      if (animeList) {
+        setAnimeList(animeList.filter(item => item.id !== anime.id))
+      }
+      markStatsDirty()
+    } else {
+      // Local UI Update
+      updateLocalList(anime.id, { progress: clampedProgress })
+    }
 
     // Queue for background sync
     chrome.runtime.sendMessage({
@@ -199,16 +210,11 @@ export const AnimeTab: React.FC = () => {
       payload: { entryId: anime.id, progress: clampedProgress }
     })
 
-    // Update stats if finished and not manual completion
-    if (anime.totalEpisodes && clampedProgress >= anime.totalEpisodes) {
-      if (manualCompletion) {
-        chrome.runtime.sendMessage({
-          action: "QUEUE_UPDATE",
-          payload: { entryId: anime.id, status: "CURRENT" }
-        })
-      } else {
-        markStatsDirty()
-      }
+    if (finished && manualCompletion) {
+      chrome.runtime.sendMessage({
+        action: "QUEUE_UPDATE",
+        payload: { entryId: anime.id, status: "CURRENT" }
+      })
     }
   }
 
@@ -253,7 +259,6 @@ export const AnimeTab: React.FC = () => {
             onProgressChange={(progress) => handleProgressChange(anime, progress)}
             loading={loading}
             scoreFormat={scoreFormat}
-            manualCompletion={manualCompletion}
             displayAdultContent={displayAdultContent}
             onHoverChange={handleHoverChange}
           />
