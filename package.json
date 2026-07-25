@@ -2,6 +2,9 @@
   "name": "aniportable",
   "version": "1.4.0",
   "private": true,
+  "scripts": {
+    "build:all": "node scripts/build-all.mjs"
+  },
   "dependencies": {
     "@apollo/client": "3.8.10",
     "@mui/icons-material": "^7.2.0",

@@ -58,6 +58,7 @@ Chrome assigns the extension ID, and gives the unpacked and Web Store builds dif
 | `npx plasmo build --target=firefox-mv3` | `build/firefox-mv3-prod` |
 | `npx plasmo package` | Zipped build, for store submission |
 | `npx plasmo package --target=firefox-mv3` | Zipped build, for store submission |
+| `npm run build:all` | Builds and packages both targets in one go: `build/chrome-mv3-prod.zip` and `build/firefox-mv3-prod.zip` |
 
 Load the Chrome build with **Load unpacked** on `chrome://extensions`, or the Firefox build with **Load Temporary Add-on** on `about:debugging#/runtime/this-firefox`. On a `--target=firefox-*` build, `.env.firefox` outranks `.env.production`, so the Firefox `client_id` is picked up automatically.
 

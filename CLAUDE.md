@@ -8,13 +8,14 @@ AniPortable is a Manifest V3 browser extension (popup-based) that lets users tra
 
 ## Commands
 
-There is no `scripts` block in `package.json` — invoke the Plasmo CLI directly:
+`package.json`'s only `scripts` entry is `build:all` (below); everything else invokes the Plasmo CLI directly:
 
 - `npm install` — install dependencies
 - `npx plasmo dev` — start the dev build with watch/HMR (outputs to `build/chrome-mv3-dev`, load unpacked in `chrome://extensions`)
 - `npx plasmo build` — production build (outputs to `build/chrome-mv3-prod`)
 - `npx plasmo build --target=firefox-mv3` — Firefox build (outputs to `build/firefox-mv3-prod`, load via "Load Temporary Add-on" on `about:debugging#/runtime/this-firefox`)
 - `npx plasmo package [--target=firefox-mv3]` — zip the production build for Chrome Web Store / AMO submission
+- `npm run build:all` — runs `scripts/build-all.mjs`, which builds and packages both targets in one go, producing `build/chrome-mv3-prod.zip` and `build/firefox-mv3-prod.zip`
 - `npx tsc --noEmit` — typecheck only (there is no separate lint/test setup in this repo)
 
 **Local setup requirement:** the AniList client ID comes from the env var `PLASMO_PUBLIC_ANILIST_CLIENT_ID`, inlined at build time by Plasmo. `Auth.login()` throws a descriptive error if the var is unset. AniList registers exactly one Redirect URL per app, and each build ends its OAuth flow at a different one, so each needs its own AniList app and its own gitignored env file: `.env.development` (`plasmo dev`), `.env.production` (`plasmo build`), `.env.firefox` (any `--target=firefox-*` build — it outranks `.env.production`). See README "Getting Started" for how to obtain each Redirect URL.
