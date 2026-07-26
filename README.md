@@ -45,7 +45,7 @@ AniList allows one Redirect URL per app, so each build needs its own app and `cl
 | --- | --- | --- |
 | Chrome, unpacked | `.env.development` | `https://<extension-id>.chromiumapp.org/` — ID is on `chrome://extensions` |
 | Chrome, Web Store | `.env.production` | Same, with the Web Store's (different) `<extension-id>` |
-| Firefox | `.env.firefox` | `https://2aa74d67c20b2df7e53c4ece72190bec8c657d82.extensions.allizom.org/` |
+| Firefox | `.env.firefox` | `https://2fdd0a33f4be3e34e284026549a0f79d970e757b.extensions.allizom.org/` |
 
 Chrome assigns the extension ID, and gives the unpacked and Web Store builds different ones — hence two Chrome apps. Firefox instead uses the ID declared in `browser_specific_settings.gecko.id` and derives the Redirect URL as `https://<sha1(id)>.extensions.allizom.org/`, which is identical for a temporary install and the signed AMO build — so one Firefox app covers both.
 
