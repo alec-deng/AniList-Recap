@@ -155,7 +155,6 @@ export const StatsTab: React.FC = () => {
     skip: !userId
   })
 
-  // Fetch anime only if not cached or dirty
   useEffect(() => {
     if (!userId) return
     if (statsList && !statsDirty) return
@@ -165,7 +164,6 @@ export const StatsTab: React.FC = () => {
     })
   }, [userId, statsDirty])
 
-  // Fetch manga only if not cached or dirty
   useEffect(() => {
     if (!userId) return
     if (mangaStatsList && !mangaStatsDirty) return
@@ -220,7 +218,6 @@ export const StatsTab: React.FC = () => {
     )
   }
 
-  // Early return when loading or getting an error
   if (viewerLoading || animeLoading || mangaLoading)
     return <StateMessage icon={Loader2} spin message="Loading your stats..." />
   if (viewerError || animeError || mangaError)
@@ -235,7 +232,6 @@ export const StatsTab: React.FC = () => {
   return (
     <div className="p-2 flex-1 flex flex-col">
 
-      {/* Anime Stats Section */}
       {showAnimeStats && (
       <div className="mb-8 mt-4">
         <StatSummary
@@ -247,9 +243,7 @@ export const StatsTab: React.FC = () => {
           profileColor={profileColor}
         />
 
-        {/* Anime Filters */}
         <div className="pl-6 pr-6 flex justify-between items-start">
-          {/* Year Section */}
           <div className="flex-1">
             <div className="flex justify-between mb-2">
               <span className="text-sm font-medium text-gray">Year</span>
@@ -292,7 +286,6 @@ export const StatsTab: React.FC = () => {
             </Slider.Root>
           </div>
 
-          {/* Season Section */}
           <div className="ml-10 min-w-[170px]">
             <h3 className="text-sm font-medium mb-1 text-gray ml-1">Season</h3>
             <CustomSelect
@@ -310,14 +303,12 @@ export const StatsTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Anime Score Chart */}
         <div className="-mt-2">
           <ScoreChart data={animeScoreData} allScores={animeAllScores} />
         </div>
       </div>
       )}
 
-      {/* Manga Stats Section */}
       {showMangaStats && (
       <div>
         <StatSummary
@@ -329,7 +320,6 @@ export const StatsTab: React.FC = () => {
           profileColor={profileColor}
         />
 
-        {/* Manga Score Chart */}
         <div className="mt-6">
           <ScoreChart data={mangaScoreData} allScores={mangaAllScores} />
         </div>

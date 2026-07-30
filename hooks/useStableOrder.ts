@@ -1,27 +1,17 @@
-import { useEffect, useState } from "react"
+import { useRef } from "react"
 
-// Keeps a list's on-screen order frozen while `hovering` is true (e.g. while
-// the user has their mouse over one of its cards, adjusting score/progress),
-// so a re-sort triggered by that same edit can't shuffle a different item
-// under the cursor mid-interaction. Items' own data still updates live —
-// only their position is held still. Re-syncs to the live order as soon as
-// hovering ends, and reconciles additions/removals even while frozen: an
-// item arriving mid-hover (e.g. moving from a sibling list, such as Behind
-// into Caught-Up) is inserted at the position `liveList`'s own order implies
-// relative to the still-frozen items, rather than always landing last.
+// Freezes a list's on-screen order while `hovering`, so an edit's own re-sort
+// can't shuffle a different item under the cursor mid-interaction. Item data
+// still updates live; only position holds. New/removed items are reconciled
+// even while frozen, inserted at the position liveList's order implies.
 export function useStableOrder<T extends { id: number }>(liveList: T[], hovering: boolean): T[] {
   const liveIds = liveList.map((item) => item.id)
-  const liveKey = liveIds.join(",")
 
-  const [frozenIds, setFrozenIds] = useState<number[]>(liveIds)
-
-  useEffect(() => {
-    if (!hovering) {
-      setFrozenIds(liveIds)
-    }
-    // liveKey is a stable stand-in for liveIds (a fresh array every render)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveKey, hovering])
+  // A ref, not state+effect: the reorder animation re-freezes within a frame of
+  // releasing, and an effect-timeline update would hand back the pre-release order.
+  const frozenIdsRef = useRef<number[]>(liveIds)
+  if (!hovering) frozenIdsRef.current = liveIds
+  const frozenIds = frozenIdsRef.current
 
   if (!hovering) {
     return liveList

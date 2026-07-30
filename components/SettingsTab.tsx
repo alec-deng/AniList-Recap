@@ -152,12 +152,8 @@ export const SettingsTab: React.FC = () => {
     setDisplayAdultContent(checked)
     try {
       await updateDisplayAdultContent({ variables: { displayAdultContent: checked } })
-
-      // Refetch AniList data for both anime and manga
-      markAnimeDirty()
-      markStatsDirty()
-      markMangaDirty()
-      markMangaStatsDirty()
+      // Marks nothing dirty: this governs browse/search, not your own list —
+      // every consumer already filters client-side
     } catch (error) {
       console.error('Failed to update adult content setting:', error)
     }
@@ -168,7 +164,7 @@ export const SettingsTab: React.FC = () => {
     try {
       await updateScoreFormat({ variables: { scoreFormat: format } })
 
-      // Refetch AniList data for both anime and manga
+      // Unlike adult content, this genuinely invalidates: scores come back rescaled
       markAnimeDirty()
       markStatsDirty()
       markMangaDirty()
@@ -348,7 +344,6 @@ export const SettingsTab: React.FC = () => {
         </div>
       </Section>
 
-      {/* Logout */}
       <div className="pt-1 flex items-center justify-between">
         <button
           onClick={logout}

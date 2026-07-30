@@ -52,7 +52,6 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | null>(null)
 
-// Color mapping function
 const getColorValue = (color: string): string => {
   const colorMap: { [key: string]: string } = {
     'pink': '#e85fb2',
@@ -78,11 +77,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showAnimeStats, setShowAnimeStatsState] = useState<boolean>(true)
   const [showMangaStats, setShowMangaStatsState] = useState<boolean>(true)
 
-  // Get user ID first
   const { data: viewerData, error: viewerError } = useQuery(VIEWER_QUERY)
   const userId = viewerData?.Viewer?.id
 
-  // Get user settings
   const { data: settingsData, loading, error: settingsError } = useQuery(SETTINGS_QUERY, {
     variables: { userId },
     skip: !userId
@@ -90,7 +87,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const error = viewerError || settingsError
 
-  // Update state when settings are fetched
   useEffect(() => {
     if (settingsData?.User?.options) {
       const options = settingsData.User.options
@@ -103,7 +99,6 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, [settingsData])
 
-  // Load local-only settings once on mount
   useEffect(() => {
     chrome.storage.local.get<{
       manualCompletion?: boolean
@@ -147,8 +142,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setTabVisibilityState(visibility)
     chrome.storage.local.set({ tabVisibility: visibility })
 
-    // Default the stats visibility to match, since a hidden tab implies the
-    // user isn't tracking that list — they can still re-enable it below.
+    // A hidden tab implies its stats should default off too, but stay overridable
     const showAnime = visibility !== 'manga'
     const showManga = visibility !== 'anime'
     setShowAnimeStatsState(showAnime)

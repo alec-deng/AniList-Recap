@@ -17,7 +17,6 @@ export function useAuth() {
   const [accessToken, setAccessToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Function to check auth status
   const checkAuthStatus = () => {
     chrome.runtime.sendMessage({ action: "CHECK_AUTH" }, (res) => {
       if (chrome.runtime.lastError) {
@@ -35,10 +34,8 @@ export function useAuth() {
   }
 
   useEffect(() => {
-    // Initial auth check
     checkAuthStatus()
 
-    // Listen for auth changes from background script
     const handleMessage = (message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
       if (message.type === 'AUTH_CHANGED') {
         console.log('[useAuth] Auth changed message received, updating state')
@@ -58,6 +55,16 @@ export function useAuth() {
     chrome.runtime.sendMessage({ action: "LOGIN" }, (res) => {
       if (chrome.runtime.lastError) {
         console.error('Login error:', chrome.runtime.lastError)
+        setLoading(false)
+        return
+      }
+
+      // AniList answers a bad/expired token with a valid JSON body, so the
+      // background raises rather than storing it as the user. Nothing was
+      // persisted in that case — stay logged out instead of half-authed.
+      if (res?.error) {
+        console.error('Login failed:', res.error)
+        setUser(null)
         setLoading(false)
         return
       }

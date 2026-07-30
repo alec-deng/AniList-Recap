@@ -10,8 +10,7 @@ type TabsProps = {
 export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
   const { profileColor } = useSettings()
 
-  // Fewer tabs means more leftover room, so a flat gap would either
-  // crowd 4 tabs or leave 3 tabs stranded — scale it with the count instead.
+  // Scaled with count: a flat gap crowds 4 tabs or strands 3
   const gapClass = tabs.length >= 4 ? 'gap-x-12' : 'gap-x-20'
 
   return (

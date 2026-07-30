@@ -21,8 +21,7 @@ type Props = {
   scoreFormat: string
   displayAdultContent: boolean
   onHoverChange?: (hovering: boolean) => void
-  // Fallback cap used only when the media has no known total (e.g. an
-  // ongoing series AniList hasn't set a final count for yet).
+  // Cap used only when the media has no known total (e.g. an airing series)
   maxProgressFallback?: number
 }
 
@@ -53,7 +52,7 @@ const ArrowIcon: React.FC<{ direction: 'up' | 'down'; color: string }> = ({ dire
   />
 )
 
-export const AnimeCard: React.FC<Props> = ({
+export const MediaCard: React.FC<Props> = ({
   anime,
   profileColor,
   onScoreChange, 
@@ -74,10 +73,7 @@ export const AnimeCard: React.FC<Props> = ({
   const maxScore = getMaxScore(scoreFormat)
   const maxEpisodes = anime.totalEpisodes || maxProgressFallback
 
-  // If this card is removed (e.g. marked completed) while the mouse is still
-  // over it, the browser never fires mouseleave — the element is gone, not
-  // moved away from — so the parent's hover count would stay inflated
-  // forever. Release it on unmount if we were still hovered.
+  // A removed card never fires mouseleave, so release on unmount instead
   const isHoveredRef = useRef(false)
   const handleMouseEnter = () => {
     isHoveredRef.current = true
@@ -96,7 +92,6 @@ export const AnimeCard: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Don't render adult content if setting is disabled
   if (anime.isAdult && !displayAdultContent) {
     return null
   }
@@ -115,15 +110,13 @@ export const AnimeCard: React.FC<Props> = ({
   const handleScoreInputBlur = () => {
     const numValue = parseFloat(tempScore)
 
-    // Check if it's a valid number and within range
     if (isNaN(numValue) || numValue < 0 || numValue > maxScore) {
-      // Invalid input - revert to current score
       setTempScore(score.toString())
       setIsEditingScore(false)
       return
     }
-    
-    // Valid input - update the score (let AniList handle formatting)
+
+    // Sent unrounded — AniList applies the account's score format itself
     setScore(numValue)
     setTempScore(numValue.toString())
     setIsEditingScore(false)
@@ -153,15 +146,12 @@ export const AnimeCard: React.FC<Props> = ({
   const handleProgressInputBlur = () => {
     const numValue = parseInt(tempProgress)
     
-    // Check if it's a valid integer and within range
     if (isNaN(numValue) || numValue < 0 || numValue > maxEpisodes || !Number.isInteger(parseFloat(tempProgress))) {
-      // Invalid input - revert to current progress
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
       return
     }
-    
-    // Valid input - update the progress
+
     setProgress(numValue)
     setTempProgress(numValue.toString())
     setIsEditingProgress(false)
@@ -177,10 +167,8 @@ export const AnimeCard: React.FC<Props> = ({
     }
   }
 
-  // Shown whenever progress has reached the total, regardless of the
-  // manualCompletion setting — otherwise an entry that reached max while the
-  // setting was on (or was already maxed when fetched) has no way to finish
-  // once the setting is off, since nothing else would trigger completion.
+  // Shown regardless of manualCompletion, or a maxed entry has no way to
+  // finish once that setting is off
   const showCompletionButton = anime.totalEpisodes !== null && progress >= anime.totalEpisodes
 
   return (
@@ -195,7 +183,6 @@ export const AnimeCard: React.FC<Props> = ({
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Completion button - top center, show on hover */}
       {showCompletionButton && (
         <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
           <button
@@ -209,16 +196,12 @@ export const AnimeCard: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Full bottom overlay covering all content */}
       <div className="absolute bottom-0 left-0 right-0 bg-black/65 p-3">
-        {/* Title */}
         <h4 className="font-medium text-xs leading-tight mb-1 text-white">
           {anime.title}
         </h4>
         
-        {/* Progress and Score row */}
         <div className="flex items-center justify-between">
-          {/* Progress section - aligned left */}
           <div className="flex items-center">
             {isEditingProgress ? (
               <input
@@ -268,7 +251,6 @@ export const AnimeCard: React.FC<Props> = ({
             </div>
           </div>
           
-          {/* Score section - aligned right */}
           <div className="flex items-center">
             <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
               <button

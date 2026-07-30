@@ -7,3 +7,54 @@
   50% { opacity: 0.9; }
   100% { opacity: 1; }
 }
+
+/* ------------------------------------------------------------------
+   Reorder choreography (driven by MediaListTab's endInteraction)
+
+   Only the card the user actually touched moves visibly; every other
+   card teleports to its new slot. So these classes are applied to
+   exactly one grid item at a time, and cards without them carry no
+   transition property at all — not a fast one, none.
+
+   z-index is inert on position: static, so every phase that needs to
+   stack above its neighbours sets position: relative too. Without it
+   the card slides in *behind* the surrounding cards.
+   ------------------------------------------------------------------ */
+
+/* Exit — a plain fade, with no lift. Shared by both ways a card can go:
+   leaving the list for good, and the first phase of a reorder. Only the
+   drop-in moves, which is what makes the reorder read as "it left, the
+   shelf rearranged, it dropped back in somewhere new" rather than as the
+   card bouncing up and back.
+
+   Kept in sync with REMOVE_FADE_MS / HIDE_BEFORE_REORDER_MS. */
+.card-leaving,
+.card-removing {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
+
+/* A card on its way off the list stops accepting clicks, so a rapid second
+   click during a bulk completion pass can't land on one already leaving. */
+.card-removing {
+  pointer-events: none;
+}
+
+/* Phase 3a — reappear in the NEW slot, hidden and lifted, with no
+   transition. This state must be painted before .card-settling is
+   added, or the browser coalesces the two and nothing animates. */
+.card-entering {
+  position: relative;
+  z-index: 10;
+  opacity: 0;
+  transform: translateY(-36px);
+}
+
+/* Phase 3b — fade in first, then drop into place */
+.card-settling {
+  position: relative;
+  z-index: 10;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.15s ease-out, transform 0.25s ease-out 0.15s;
+}

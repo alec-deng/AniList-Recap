@@ -31,6 +31,21 @@ class Storage {
 // ============================================
 const ANILIST_GRAPHQL_URL = "https://graphql.anilist.co/";
 
+// fetch() doesn't reject on 4xx/5xx, and AniList answers those with valid JSON
+// — a bare `return response.json()` would read a rejected request as success.
+class AniListRequestError extends Error {
+  readonly status: number
+  // Named even on failure: an aliased multi-mutation can partly succeed
+  readonly data: unknown
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message)
+    this.name = "AniListRequestError"
+    this.status = status
+    this.data = data
+  }
+}
+
 class AniList {
   #accessToken: string
 
@@ -42,11 +57,41 @@ class AniList {
     const headers = new Headers()
     headers.append("Content-Type", "application/json")
     headers.append("Accept", "application/json")
-    
+
     if (this.#accessToken) {
       headers.append("Authorization", `Bearer ${this.#accessToken}`)
     }
     return headers
+  }
+
+  async #request(query: string, variables?: Record<string, unknown>): Promise<any> {
+    const response = await fetch(ANILIST_GRAPHQL_URL, {
+      method: "POST",
+      headers: this.#headers(),
+      body: JSON.stringify({ query, variables }),
+    })
+
+    // A 5xx can arrive as an HTML error page, which isn't parseable
+    const json = await response.json().catch(() => null)
+
+    if (!response.ok) {
+      const detail = json?.errors?.[0]?.message
+      throw new AniListRequestError(
+        `AniList request failed with ${response.status}${detail ? `: ${detail}` : ""}`,
+        response.status,
+        json?.data
+      )
+    }
+
+    if (json?.errors?.length) {
+      throw new AniListRequestError(
+        json.errors.map((e: { message?: string }) => e.message).join("; "),
+        response.status,
+        json?.data
+      )
+    }
+
+    return json
   }
 
   async user(): Promise<any> {
@@ -62,16 +107,9 @@ class AniList {
       }
     `
 
-    const response = await fetch(ANILIST_GRAPHQL_URL, {
-      method: "POST",
-      headers: this.#headers(),
-      body: JSON.stringify({ query }),
-    })
-
-    return response.json()
+    return this.#request(query)
   }
 
-  // Method to handle mutations from the background
   async saveMediaListEntry(variables: { id: number; progress?: number; score?: number; status?: string }): Promise<any> {
     const query = `
       mutation ($id: Int, $progress: Int, $score: Float, $status: MediaListStatus) {
@@ -84,66 +122,103 @@ class AniList {
       }
     `
 
-    const response = await fetch(ANILIST_GRAPHQL_URL, {
-      method: "POST",
-      headers: this.#headers(),
-      body: JSON.stringify({ query, variables }),
-    })
-
-    return response.json()
+    return this.#request(query, variables)
   }
 
-  // Minimal addition: Bulk method
   async saveBulkMediaListEntries(entries: Map<number, any>) {
     const mutationParts = Array.from(entries.entries()).map(([id, data]) => {
       const args = [`id: ${id}`]
       if (data.progress !== undefined) args.push(`progress: ${data.progress}`)
       if (data.score !== undefined) args.push(`score: ${data.score}`)
       if (data.status !== undefined) args.push(`status: ${data.status}`)
-      return `m${id}: SaveMediaListEntry(${args.join(", ")}) { id }`
+      // updatedAt lets the popup reconcile "Last Updated" after a flush, free
+      return `m${id}: SaveMediaListEntry(${args.join(", ")}) { id updatedAt }`
     })
 
     const query = `mutation { ${mutationParts.join("\n")} }`
 
-    const response = await fetch(ANILIST_GRAPHQL_URL, {
-      method: "POST",
-      headers: this.#headers(),
-      body: JSON.stringify({ query }),
-    })
-
-    return response.json()
+    return this.#request(query)
   }
 }
 
 // ============================================
 // Debouncing Logic
 // ============================================
-// The MV3 service worker can be terminated by the browser while a plain
-// setTimeout is pending, which would otherwise drop queued edits silently.
-// Pending updates are mirrored to chrome.storage.local so they survive a
-// worker restart, and are re-queued (not discarded) if the sync call fails.
+// A terminated MV3 worker drops a pending setTimeout, so updates are mirrored
+// to chrome.storage.local to survive a restart, and re-queued if sync fails.
 type PendingUpdate = { progress?: number; score?: number; status?: string }
+type QueuedUpdate = PendingUpdate & { queuedAt: number }
+
+// The account is editable elsewhere and a worker can lie dormant for days, so
+// a very old edit could clobber newer changes made from another device —
+// hence the age-out below, which is also what makes retrying indefinitely safe.
+const MAX_QUEUE_AGE_MS = 24 * 60 * 60 * 1000
+const MAX_FLUSH_ATTEMPTS = 3
 
 let globalDebounceTimer: ReturnType<typeof setTimeout> | null = null
-const pendingUpdates = new Map<number, PendingUpdate>()
+const pendingUpdates = new Map<number, QueuedUpdate>()
+const failedAttempts = new Map<number, number>()
 
 async function persistPendingUpdates(): Promise<void> {
+  if (pendingUpdates.size === 0) {
+    // An empty queue must clear the mirror, or a restart replays a synced batch
+    await Storage.remove(Storage.DATA.PENDING_UPDATES)
+    return
+  }
   await Storage.set(Storage.DATA.PENDING_UPDATES, Array.from(pendingUpdates.entries()))
 }
 
 async function restorePendingUpdates(): Promise<void> {
-  const saved = await Storage.get<[number, PendingUpdate][]>(Storage.DATA.PENDING_UPDATES)
+  const saved = await Storage.get<[number, Partial<QueuedUpdate>][]>(Storage.DATA.PENDING_UPDATES)
   if (!saved || saved.length === 0) return
 
   for (const [id, data] of saved) {
-    pendingUpdates.set(id, data)
+    // Pre-queuedAt entries get a fresh window instead of reading as infinitely old
+    pendingUpdates.set(id, { ...data, queuedAt: data.queuedAt ?? Date.now() })
   }
 
-  // Flush what survived the restart instead of waiting for the next edit
   flushAllPendingUpdates()
 }
 
+function dropStaleUpdates(): void {
+  const oldest = Date.now() - MAX_QUEUE_AGE_MS
+  let dropped = false
+
+  for (const [id, data] of pendingUpdates) {
+    if (data.queuedAt < oldest) {
+      pendingUpdates.delete(id)
+      failedAttempts.delete(id)
+      dropped = true
+      console.warn(`[Background] Discarding entry ${id}, queued too long ago to replay safely:`, data)
+    }
+  }
+
+  // So a flush left with nothing still clears the storage mirror
+  if (dropped) persistPendingUpdates()
+}
+
+type SyncedEntry = { id: number; updatedAt: number }
+
+function isSyncedEntry(value: unknown): value is SyncedEntry {
+  const entry = value as SyncedEntry | null
+  return !!entry && typeof entry.id === "number" && typeof entry.updatedAt === "number"
+}
+
+// Hands the server's real updatedAt back to the popup's list cache
+function onEntriesSynced(entries: SyncedEntry[]): void {
+  chrome.runtime.sendMessage({ type: "ENTRIES_SYNCED", payload: entries }).catch(() => {}) // popup may not be open
+}
+
+// The aliased bulk mutation can apply some entries and reject others; reading
+// which landed stops a retry from re-sending edits that already applied.
+function reportSynced(data: unknown): Set<number> {
+  const synced = Object.values((data ?? {}) as Record<string, unknown>).filter(isSyncedEntry)
+  if (synced.length > 0) onEntriesSynced(synced)
+  return new Set(synced.map((entry) => entry.id))
+}
+
 async function flushAllPendingUpdates() {
+  dropStaleUpdates()
   if (pendingUpdates.size === 0) return
 
   if (globalDebounceTimer) {
@@ -158,16 +233,43 @@ async function flushAllPendingUpdates() {
   pendingUpdates.clear()
 
   try {
-    const api = new AniList(token)
-    await api.saveBulkMediaListEntries(updatesToFlush)
-    await Storage.remove(Storage.DATA.PENDING_UPDATES)
+    const result = await new AniList(token).saveBulkMediaListEntries(updatesToFlush)
+    reportSynced(result?.data)
+    for (const id of updatesToFlush.keys()) failedAttempts.delete(id)
+    // Not an unconditional remove — an edit queued mid-flight is already in
+    // pendingUpdates and would lose its stored copy
+    await persistPendingUpdates()
     console.log('[Background] Bulk sync completed')
   } catch (error) {
     console.error("[Background] Failed to flush updates, will retry later:", error)
-    // Re-queue so the update isn't lost; merge in case new edits arrived meanwhile
+
+    const landed = reportSynced(error instanceof AniListRequestError ? error.data : null)
+
+    // Only a rejection of the edit itself counts. Offline, an expired token, a
+    // rate limit, and AniList's outage 403 say nothing about the edit — retry.
+    const isPermanentRejection =
+      error instanceof AniListRequestError && (error.status === 400 || error.status === 404)
+
     for (const [id, data] of updatesToFlush) {
+      if (landed.has(id)) {
+        failedAttempts.delete(id)
+        continue
+      }
+
+      if (isPermanentRejection) {
+        const attempts = (failedAttempts.get(id) ?? 0) + 1
+        if (attempts >= MAX_FLUSH_ATTEMPTS) {
+          failedAttempts.delete(id)
+          console.error(`[Background] Giving up on entry ${id} after ${attempts} attempts:`, data)
+          continue
+        }
+        failedAttempts.set(id, attempts)
+      }
+
+      // Re-queue, letting edits that arrived during the failed request win
       pendingUpdates.set(id, { ...data, ...pendingUpdates.get(id) })
     }
+
     await persistPendingUpdates()
   }
 }
@@ -179,8 +281,7 @@ restorePendingUpdates()
 // Authentication
 // ============================================
 class Auth {
-  // Set via .env.development (npx plasmo dev) / .env.production (npx plasmo build)
-  // / .env.firefox (build --target=firefox-mv3)
+  // Set via .env.development / .env.production / .env.firefox
   static CLIENT_ID = process.env.PLASMO_PUBLIC_ANILIST_CLIENT_ID
 
   static async login() {
@@ -193,10 +294,8 @@ class Auth {
     const authUrl = new URL("https://anilist.co/api/v2/oauth/authorize")
     authUrl.searchParams.append("client_id", this.CLIENT_ID)
     authUrl.searchParams.append("response_type", "token")
-    // Cache-bust: if the user closes/cancels the auth window, Chrome can fail
-    // a subsequent launchWebAuthFlow call immediately ("Authorization page
-    // could not be loaded") when given the exact same URL as the cancelled
-    // attempt. A unique state param forces each attempt to be treated as new.
+    // Cache-bust: retrying with the identical URL after a cancelled attempt can
+    // make Chrome fail launchWebAuthFlow immediately
     authUrl.searchParams.append("state", crypto.randomUUID())
 
     let redirectUrl: string | undefined
@@ -235,7 +334,6 @@ class Auth {
   }
 
   static async logout() {
-    // Flush before clearing storage
     await flushAllPendingUpdates()
     await Promise.all([
       Storage.remove(Storage.DATA.ACCESS_TOKEN),
@@ -248,21 +346,16 @@ class Auth {
 // Message Handler
 // ============================================
 function broadcastAuthChange() {
-  // Send to all tabs
   chrome.tabs.query({}, (tabs) => {
     tabs.forEach((tab) => {
       if (tab.id) {
-        chrome.tabs.sendMessage(tab.id, { type: 'AUTH_CHANGED' }).catch(() => {
-          // Ignore errors for tabs that don't have content scripts
-        })
+        // Tabs without a content script reject; that's fine
+        chrome.tabs.sendMessage(tab.id, { type: 'AUTH_CHANGED' }).catch(() => {})
       }
     })
   })
 
-  // Send to popup if it's open
-  chrome.runtime.sendMessage({ type: 'AUTH_CHANGED' }).catch(() => {
-    // Ignore errors if popup is not open
-  })
+  chrome.runtime.sendMessage({ type: 'AUTH_CHANGED' }).catch(() => {}) // popup may not be open
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -270,25 +363,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.action) {
       case "QUEUE_UPDATE":
         const { entryId, progress, score, status } = message.payload
-        
-        // Merge new changes with existing pending data for this entry
+
         const existing = pendingUpdates.get(entryId) || {}
         pendingUpdates.set(entryId, {
           ...existing,
           ...(progress !== undefined && { progress }),
           ...(score !== undefined && { score }),
-          ...(status !== undefined && { status })
+          ...(status !== undefined && { status }),
+          queuedAt: Date.now() // refreshed per edit: age-out tracks the newest change
         })
         await persistPendingUpdates()
 
-        // Reset debounce timer
         if (globalDebounceTimer) {
           clearTimeout(globalDebounceTimer)
         }
 
         globalDebounceTimer = setTimeout(() => {
           flushAllPendingUpdates()
-        }, 5000) // 5-second buffer
+        }, 5000)
 
         sendResponse({ status: "queued" })
         break
@@ -332,7 +424,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true // Keep listener active for async response
 })
 
-// Listen for storage changes and broadcast to all contexts
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local') {
     if (changes[Storage.DATA.ACCESS_TOKEN] || changes[Storage.DATA.USER]) {

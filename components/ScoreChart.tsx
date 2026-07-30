@@ -8,12 +8,10 @@ type Props = {
   allScores: number[]
 }
 
-// Custom tick component for X-axis
 const CustomXAxisTick = ({ x, y, payload, scoreFormat }: any) => {
   const score = parseInt(payload.value)
   
   if (scoreFormat === 'POINT_5') {
-    // Show stars for POINT_5 format
     return (
       <g transform={`translate(${x},${y})`}>
         {[...Array(5)].map((_, index) => (
@@ -29,7 +27,6 @@ const CustomXAxisTick = ({ x, y, payload, scoreFormat }: any) => {
       </g>
     )
   } else if (scoreFormat === 'POINT_3') {
-    // Show emoji-style icons for POINT_3 format
     let IconComponent
     
     switch (score) {
@@ -56,7 +53,6 @@ const CustomXAxisTick = ({ x, y, payload, scoreFormat }: any) => {
       </g>
     )
   } else {
-    // Default numeric display
     return (
       <g transform={`translate(${x},${y})`}>
         <text
@@ -92,13 +88,11 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
   const calculatedWidth = Math.max(100, allScores.length * minBarWidth)
   const shouldScroll = allScores.length > 11 // Scroll if more than 11 entries
 
-  // Find max count for height calculation
   const maxCount = Math.max(...completeData.map(d => d.count))
 
   return (
     <div className="border rounded-xl border-white bg-white-100 m-4 shadow-lg overflow-hidden">
       <div className={`${shouldScroll ? 'overflow-x-auto' : ''}`}>
-        {/* Chart area with white background */}
         <div className={`bg-white-100`}>
           <ResponsiveContainer 
             width={shouldScroll ? calculatedWidth : "100%"}
@@ -136,7 +130,6 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
           </ResponsiveContainer>
         </div>
 
-        {/* X-axis labels area with gray background */}
         <div 
           className="bg-[#e8edf3]"
           style={{ width: shouldScroll ? `${calculatedWidth}px` : '100%' }}

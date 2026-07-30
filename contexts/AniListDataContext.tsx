@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext, useCallback } from "react"
+import React, { createContext, useState, useContext, useCallback, useEffect } from "react"
+
+type ListSetter = React.Dispatch<React.SetStateAction<any[] | null>>
 
 type AniListDataContextType = {
   animeList: any[] | null
@@ -9,10 +11,10 @@ type AniListDataContextType = {
   statsDirty: boolean
   mangaDirty: boolean
   mangaStatsDirty: boolean
-  setAnimeList: (data: any[]) => void
-  setStatsList: (data: any[]) => void
-  setMangaList: (data: any[]) => void
-  setMangaStatsList: (data: any[]) => void
+  setAnimeList: ListSetter
+  setStatsList: ListSetter
+  setMangaList: ListSetter
+  setMangaStatsList: ListSetter
   markAnimeDirty: () => void
   markStatsDirty: () => void
   markMangaDirty: () => void
@@ -51,6 +53,28 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setMangaStatsList([])
     setMangaStatsDirty(true)
   }, [])
+  // Corrects the optimistic updatedAt the list tab writes, with the server's real stamp
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      if (message?.type !== "ENTRIES_SYNCED" || !Array.isArray(message.payload)) return
+
+      const stamps = new Map<number, number>(
+        message.payload.map((e: { id: number; updatedAt: number }) => [e.id, e.updatedAt])
+      )
+
+      for (const setList of [setAnimeList, setStatsList, setMangaList, setMangaStatsList]) {
+        setList((list) =>
+          list?.map((entry) =>
+            stamps.has(entry.id) ? { ...entry, updatedAt: stamps.get(entry.id) } : entry
+          ) ?? list
+        )
+      }
+    }
+
+    chrome.runtime.onMessage.addListener(handleMessage)
+    return () => chrome.runtime.onMessage.removeListener(handleMessage)
+  }, [])
+
   const clearAnimeDirty = useCallback(() => setAnimeDirty(false), [])
   const clearStatsDirty = useCallback(() => setStatsDirty(false), [])
   const clearMangaDirty = useCallback(() => setMangaDirty(false), [])
