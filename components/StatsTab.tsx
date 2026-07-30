@@ -158,19 +158,25 @@ export const StatsTab: React.FC = () => {
   useEffect(() => {
     if (!userId) return
     if (statsList && !statsDirty) return
-    refetchAnime().then(res => {
-      setStatsList(scoredEntries(res))
-      clearStatsDirty()
-    })
+    refetchAnime()
+      .then(res => {
+        setStatsList(scoredEntries(res))
+        clearStatsDirty()
+      })
+      // refetch() rejects on a network error. Stays dirty so the next mount
+      // retries; useQuery's own error already drives the StateMessage.
+      .catch(err => console.error("[StatsTab] anime refetch failed:", err))
   }, [userId, statsDirty])
 
   useEffect(() => {
     if (!userId) return
     if (mangaStatsList && !mangaStatsDirty) return
-    refetchManga().then(res => {
-      setMangaStatsList(scoredEntries(res))
-      clearMangaStatsDirty()
-    })
+    refetchManga()
+      .then(res => {
+        setMangaStatsList(scoredEntries(res))
+        clearMangaStatsDirty()
+      })
+      .catch(err => console.error("[StatsTab] manga refetch failed:", err))
   }, [userId, mangaStatsDirty])
 
   const animeEntries = statsList ?? []

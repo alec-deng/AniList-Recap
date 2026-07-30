@@ -78,6 +78,9 @@ export const MediaCard: React.FC<Props> = ({
     (v): v is number => v !== null
   )
   const maxEpisodes = episodeCaps.length ? Math.min(...episodeCaps) : maxProgressFallback
+  // The cap only limits increases — progress set past it elsewhere must still
+  // step down one at a time rather than snapping to the cap
+  const progressCeiling = Math.max(maxEpisodes, progress)
 
   // A removed card never fires mouseleave, so release on unmount instead
   const isHoveredRef = useRef(false)
@@ -139,7 +142,7 @@ export const MediaCard: React.FC<Props> = ({
   }
 
   const handleProgressChange = (newProgress: number) => {
-    const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
+    const clampedProgress = Math.min(Math.max(0, newProgress), progressCeiling)
     setProgress(clampedProgress)
     setTempProgress(clampedProgress.toString())
     onProgressChange(clampedProgress)
@@ -152,7 +155,7 @@ export const MediaCard: React.FC<Props> = ({
   const handleProgressInputBlur = () => {
     const numValue = parseInt(tempProgress)
     
-    if (isNaN(numValue) || numValue < 0 || numValue > maxEpisodes || !Number.isInteger(parseFloat(tempProgress))) {
+    if (isNaN(numValue) || numValue < 0 || numValue > progressCeiling || !Number.isInteger(parseFloat(tempProgress))) {
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
       return

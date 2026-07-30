@@ -69,6 +69,11 @@ type Snapshot = {
 const indexOfEntry = (items: MediaEntry[], entryId: number) =>
   items.findIndex((item) => item.id === entryId)
 
+// english/native are null for plenty of media — a missing title would blank the
+// card and crash the sort's localeCompare
+const pickTitle = (title: Record<string, string | null>, language: string): string =>
+  title[language.toLowerCase()] || title.romaji || title.native || title.english || ""
+
 const useListState = (type: MediaListConfig["type"]) => {
   const data = useAniListData()
   return type === "anime"
@@ -174,10 +179,14 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     if (list && !dirty) return
 
     if (dirty) {
-      refetch().then((res) => {
-        setList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? [])
-        clearDirty()
-      })
+      refetch()
+        .then((res) => {
+          setList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? [])
+          clearDirty()
+        })
+        // refetch() rejects on a network error. Stays dirty so the next mount
+        // retries; useQuery's own error already drives the StateMessage.
+        .catch((err) => console.error("[MediaListTab] refetch failed:", err))
     } else if (data) {
       setList(data.MediaListCollection?.lists?.[0]?.entries ?? [])
     }
@@ -187,7 +196,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
 
   const entries: MediaEntry[] = rawEntries.map((entry: any) => ({
     id: entry.id,
-    title: entry.media.title[titleLanguage.toLowerCase()],
+    title: pickTitle(entry.media.title, titleLanguage),
     cover: entry.media.coverImage.large,
     progress: entry.progress,
     score: entry.score || 0,
@@ -460,7 +469,9 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
       (v): v is number => v !== null
     )
     const max = episodeCaps.length ? Math.min(...episodeCaps) : 9999
-    const clampedProgress = Math.min(Math.max(0, newProgress), max)
+    // The cap only limits increases — progress set past it elsewhere must still
+    // step down one at a time rather than snapping to the cap
+    const clampedProgress = Math.min(Math.max(0, newProgress), Math.max(max, entry.progress))
     const finished = Boolean(entry.totalEpisodes && clampedProgress >= entry.totalEpisodes)
 
     touchedRef.current = entry.id

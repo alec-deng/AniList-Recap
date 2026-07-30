@@ -88,7 +88,10 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
   const calculatedWidth = Math.max(100, allScores.length * minBarWidth)
   const shouldScroll = allScores.length > 11 // Scroll if more than 11 entries
 
-  const maxCount = Math.max(...completeData.map(d => d.count))
+  // Math.max() of nothing is -Infinity: a user who scores nothing has no bars
+  // at all, and an infinite domain renders an invalid axis
+  const counts = completeData.map(d => d.count)
+  const maxCount = counts.length ? Math.max(...counts) : 0
 
   return (
     <div className="border rounded-xl border-white bg-white-100 m-4 shadow-lg overflow-hidden">
@@ -109,7 +112,9 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
                 axisLine={false}
                 tickLine={false}
                 width={0}
-                domain={[0, maxCount + Math.ceil(maxCount * 0.2)]}
+                // Floor of 1 so an all-zero filter (e.g. a year with no
+                // entries) doesn't collapse the axis to [0, 0]
+                domain={[0, Math.max(1, maxCount + Math.ceil(maxCount * 0.2))]}
               />
               <Bar 
                 dataKey="count" 
