@@ -51,7 +51,7 @@ function PopupContent() {
       <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#12162a]">
         <div className="flex items-center space-x-4">
           {avatar && (
-            <img src={avatar} alt="Avatar" className="w-16 h-16"/>
+            <img src={avatar} alt="Avatar" className="w-16 h-16 rounded-sm"/>
           )}
           {userName && (
             <p className="text-white pt-6 font-bold tracking-wide text-sm">{userName}</p>
