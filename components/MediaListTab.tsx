@@ -454,7 +454,12 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   }
 
   const handleProgressChange = (entry: MediaEntry, newProgress: number) => {
-    const max = entry.totalEpisodes || 9999
+    // Cap to whichever is lower: totalEpisodes or aired-so-far (nextAiringEpisode - 1)
+    const airedEpisodes = entry.nextAiringEpisode ? entry.nextAiringEpisode - 1 : null
+    const episodeCaps = [entry.totalEpisodes, airedEpisodes].filter(
+      (v): v is number => v !== null
+    )
+    const max = episodeCaps.length ? Math.min(...episodeCaps) : 9999
     const clampedProgress = Math.min(Math.max(0, newProgress), max)
     const finished = Boolean(entry.totalEpisodes && clampedProgress >= entry.totalEpisodes)
 

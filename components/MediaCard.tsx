@@ -7,6 +7,7 @@ type Anime = {
   cover: string
   progress: number
   score: number
+  nextAiringEpisode: number | null
   totalEpisodes: number | null
   isAdult: boolean
 }
@@ -71,7 +72,12 @@ export const MediaCard: React.FC<Props> = ({
   const [tempProgress, setTempProgress] = useState(anime.progress.toString())
   const [tempScore, setTempScore] = useState(anime.score.toString())
   const maxScore = getMaxScore(scoreFormat)
-  const maxEpisodes = anime.totalEpisodes || maxProgressFallback
+  // Cap to whichever is lower: totalEpisodes or aired-so-far (nextAiringEpisode - 1)
+  const airedEpisodes = anime.nextAiringEpisode ? anime.nextAiringEpisode - 1 : null
+  const episodeCaps = [anime.totalEpisodes, airedEpisodes].filter(
+    (v): v is number => v !== null
+  )
+  const maxEpisodes = episodeCaps.length ? Math.min(...episodeCaps) : maxProgressFallback
 
   // A removed card never fires mouseleave, so release on unmount instead
   const isHoveredRef = useRef(false)
@@ -237,7 +243,7 @@ export const MediaCard: React.FC<Props> = ({
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleProgressChange(progress + 1)}
-                disabled={loading || (anime.totalEpisodes !== null && progress >= anime.totalEpisodes)}
+                disabled={loading || progress >= maxEpisodes}
               >
                 <ArrowIcon direction="up" color={profileColor} />
               </button>
