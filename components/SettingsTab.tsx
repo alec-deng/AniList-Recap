@@ -71,6 +71,24 @@ const colorOptions = [
   { name: 'gray', color: '#677b94' },
 ]
 
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div>
+    <h3 className="text-sm font-medium mb-2 text-gray">{title}</h3>
+    {children}
+  </div>
+)
+
+const HelpTooltip: React.FC<{ text: string }> = ({ text }) => (
+  <div className="relative group">
+    <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
+    <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
+      {text}
+    </div>
+  </div>
+)
+
+const checkboxClass = "space-x-1 text-sm text-gray"
+
 export const SettingsTab: React.FC = () => {
   const { 
     profileColor,
@@ -193,9 +211,7 @@ export const SettingsTab: React.FC = () => {
 
   return (
     <div className="p-4 space-y-5 flex-1">
-      {/* Profile Color */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Profile Color</h3>
+      <Section title="Profile Color">
         <div className="grid grid-cols-7 gap-2 ml-2">
           {colorOptions.map((option) => (
             <button
@@ -216,11 +232,9 @@ export const SettingsTab: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </Section>
 
-      {/* Score Format */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Scoring System</h3>
+      <Section title="Scoring System">
         <CustomSelect
           options={[
             { name: "100 Point (55/100)", value: "POINT_100" },
@@ -234,11 +248,9 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="w-full"
         />
-      </div>
+      </Section>
 
-      {/* Row Order */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Default List Order</h3>
+      <Section title="Default List Order">
         <CustomSelect
           options={[
             { name: "Score", value: "score" },
@@ -251,11 +263,9 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="w-full"
         />
-      </div>
+      </Section>
 
-      {/* Title Language */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Title Language</h3>
+      <Section title="Title Language">
         <CustomSelect
           options={[
             { name: "Romaji (Sousou no Frieren)", value: "ROMAJI" },
@@ -267,11 +277,9 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="w-full"
         />
-      </div>
+      </Section>
 
-      {/* Tab Visibility */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Media Type</h3>
+      <Section title="Media Type">
         <CustomToggle
           options={[
             { label: "Both", value: "both" },
@@ -283,79 +291,62 @@ export const SettingsTab: React.FC = () => {
           profileColor={profileColor}
           className="w-full"
         />
-      </div>
+      </Section>
 
-      {/* Stats Visibility */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Show in Stats</h3>
+      <Section title="Show in Stats">
         <div className="flex items-center gap-6">
           <CustomCheckbox
             checked={showAnimeStats}
             onChange={setShowAnimeStats}
             label="Anime"
             profileColor={profileColor}
-            className="space-x-1 text-sm text-gray"
+            className={checkboxClass}
           />
           <CustomCheckbox
             checked={showMangaStats}
             onChange={setShowMangaStats}
             label="Manga"
             profileColor={profileColor}
-            className="space-x-1 text-sm text-gray"
+            className={checkboxClass}
           />
         </div>
-      </div>
+      </Section>
 
-      {/* Preferences */}
-      <div>
-        <h3 className="text-sm font-medium mb-2 text-gray">Preferences</h3>
+      <Section title="Preferences">
         <div className="space-y-3">
-          {/* Manual Completion */}
           <div className="flex items-center space-x-2">
             <CustomCheckbox
               checked={manualCompletion}
               onChange={handleManualCompletionChange}
               label="Manually Mark As Completed"
               profileColor={profileColor}
-              className="space-x-1 text-sm text-gray"
+              className={checkboxClass}
             />
-            <div className="relative group">
-              <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
-              <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-                When enabled, anime/manga stay in your list even after completing all episodes/chapters. A one-click complete button will appear to manually mark them as completed.
-              </div>
-            </div>
+            <HelpTooltip text="When enabled, anime/manga stay in your list even after completing all episodes/chapters. A one-click complete button will appear to manually mark them as completed." />
           </div>
 
-          {/* Separate Entries */}
           <div className="flex items-center space-x-2">
             <CustomCheckbox
               checked={separateEntries}
               onChange={handleSeparateEntriesChange}
               label="Separate Caught-Up Entries"
               profileColor={profileColor}
-              className="space-x-1 text-sm text-gray"
+              className={checkboxClass}
             />
-            <div className="relative group">
-              <HelpIcon className="text-gray cursor-help" sx={{ fontSize: '1rem' }}/>
-              <div className="absolute bottom-full shadow-lg border border-white left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1.5 bg-white-100 text-gray text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none w-56 z-10">
-                When enabled, anime/manga that you've caught up to (watched/read all available episodes/chapters) are shown separately from those with remaining content.
-              </div>
-            </div>
+            <HelpTooltip text="When enabled, anime/manga that you've caught up to (watched/read all available episodes/chapters) are shown separately from those with remaining content." />
           </div>
 
-          {/* Adult Content */}
           <div>
             <CustomCheckbox
               checked={displayAdultContent}
               onChange={handleAdultContentChange}
               label="Display 18+ Content"
               profileColor={profileColor}
-              className="space-x-1 text-sm text-gray"
+              className={checkboxClass}
             />
           </div>
         </div>
-      </div>
+      </Section>
 
       {/* Logout */}
       <div className="pt-1 flex items-center justify-between">

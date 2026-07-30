@@ -4,7 +4,7 @@ import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
 import { ScoreChart } from "./ScoreChart"
 import { CustomSelect } from "./CustomSelect"
-import { MonitorCheck, BookOpen, Percent, BarChart3, Loader2, AlertCircle } from "lucide-react"
+import { MonitorCheck, BookOpen, Percent, BarChart3, Loader2, AlertCircle, type LucideIcon } from "lucide-react"
 import CancelIcon from "@mui/icons-material/Cancel"
 import * as Slider from "@radix-ui/react-slider"
 import { StateMessage } from "./StateMessage"
@@ -56,6 +56,67 @@ const VIEWER_QUERY = gql`
   }
 `
 
+// Flatten all entries from all lists (CURRENT, COMPLETED, etc.), keeping only scored ones
+const scoredEntries = (res: any) =>
+  (res.data?.MediaListCollection?.lists ?? [])
+    .flatMap((list: any) => list.entries ?? [])
+    .filter((entry: any) => entry.score > 0)
+
+const distinctScores = (entries: any[]) =>
+  Array.from(new Set(entries.map((e: any) => e.score).filter(Boolean))).sort(
+    (a, b) => (a as number) - (b as number)
+  ) as number[]
+
+const scoreCounts = (entries: any[]) => {
+  const counts: Record<number, number> = {}
+  entries.forEach((e: any) => e.score && (counts[e.score] = (counts[e.score] || 0) + 1))
+  return Object.entries(counts).map(([score, count]) => ({ score: Number(score), count }))
+}
+
+const meanScore = (entries: any[]) =>
+  entries.length ? entries.reduce((sum, e: any) => sum + (e.score || 0), 0) / entries.length : 0
+
+const StatTile: React.FC<{
+  icon: LucideIcon
+  value: string | number
+  label: string
+  profileColor: string
+}> = ({ icon: Icon, value, label, profileColor }) => (
+  <div className="flex space-x-4 items-center justify-center">
+    <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg">
+      <Icon size={20} className="text-gray" />
+    </div>
+    <div className="text-start">
+      <div className="text-2xl font-bold" style={{ color: profileColor }}>
+        {value}
+      </div>
+      <div className="text-sm text-gray tracking-wide font-semibold">{label}</div>
+    </div>
+  </div>
+)
+
+const StatSummary: React.FC<{
+  heading: string
+  icon: LucideIcon
+  total: number
+  totalLabel: string
+  mean: number
+  profileColor: string
+}> = ({ heading, icon, total, totalLabel, mean, profileColor }) => (
+  <>
+    <h3 className="text-xl text-gray font-bold text-center mb-2">{heading}</h3>
+    <div className="flex justify-center gap-[114px] m-4 -translate-x-2">
+      <StatTile icon={icon} value={total} label={totalLabel} profileColor={profileColor} />
+      <StatTile
+        icon={Percent}
+        value={mean.toFixed(2)}
+        label="Mean Score"
+        profileColor={profileColor}
+      />
+    </div>
+  </>
+)
+
 export const StatsTab: React.FC = () => {
   const {
     profileColor,
@@ -99,12 +160,7 @@ export const StatsTab: React.FC = () => {
     if (!userId) return
     if (statsList && !statsDirty) return
     refetchAnime().then(res => {
-      // Flatten all entries from all lists (CURRENT, COMPLETED, etc.)
-      const allLists = res.data?.MediaListCollection?.lists ?? []
-      const allEntries = allLists.flatMap((list: any) => list.entries ?? [])
-      // Filter to only include entries with scores
-      const scoredEntries = allEntries.filter((entry: any) => entry.score > 0)
-      setStatsList(scoredEntries)
+      setStatsList(scoredEntries(res))
       clearStatsDirty()
     })
   }, [userId, statsDirty])
@@ -114,12 +170,7 @@ export const StatsTab: React.FC = () => {
     if (!userId) return
     if (mangaStatsList && !mangaStatsDirty) return
     refetchManga().then(res => {
-      // Flatten all entries from all lists (CURRENT, COMPLETED, etc.)
-      const allLists = res.data?.MediaListCollection?.lists ?? []
-      const allEntries = allLists.flatMap((list: any) => list.entries ?? [])
-      // Filter to only include entries with scores
-      const scoredEntries = allEntries.filter((entry: any) => entry.score > 0)
-      setMangaStatsList(scoredEntries)
+      setMangaStatsList(scoredEntries(res))
       clearMangaStatsDirty()
     })
   }, [userId, mangaStatsDirty])
@@ -127,19 +178,8 @@ export const StatsTab: React.FC = () => {
   const animeEntries = statsList ?? []
   const mangaEntries = mangaStatsList ?? []
 
-  // Anime score distribution
-  const animeAllScores = useMemo(() => {
-    const scores: Record<number, boolean> = {}
-    animeEntries.forEach((e: any) => e.score && (scores[e.score] = true))
-    return Object.keys(scores).map(Number).sort((a, b) => a - b)
-  }, [animeEntries])
-
-  // Manga score distribution
-  const mangaAllScores = useMemo(() => {
-    const scores: Record<number, boolean> = {}
-    mangaEntries.forEach((e: any) => e.score && (scores[e.score] = true))
-    return Object.keys(scores).map(Number).sort((a, b) => a - b)
-  }, [mangaEntries])
+  const animeAllScores = useMemo(() => distinctScores(animeEntries), [animeEntries])
+  const mangaAllScores = useMemo(() => distinctScores(mangaEntries), [mangaEntries])
 
   const years = useMemo(() => {
     const set = new Set<number>()
@@ -163,31 +203,11 @@ export const StatsTab: React.FC = () => {
     })
   }, [mangaEntries, displayAdultContent])
 
-  // Anime stats
-  const totalWatched = filteredAnime.length
-  const animeMeanScore = totalWatched
-    ? filteredAnime.reduce((sum, e: any) => sum + (e.score || 0), 0) / totalWatched
-    : 0
+  const animeMeanScore = meanScore(filteredAnime)
+  const mangaMeanScore = meanScore(filteredManga)
 
-  // Manga stats
-  const totalRead = filteredManga.length
-  const mangaMeanScore = totalRead
-    ? filteredManga.reduce((sum, e: any) => sum + (e.score || 0), 0) / totalRead
-    : 0
-
-  // Anime score distribution
-  const animeScoreData = useMemo(() => {
-    const counts: Record<number, number> = {}
-    filteredAnime.forEach((e: any) => e.score && (counts[e.score] = (counts[e.score] || 0) + 1))
-    return Object.entries(counts).map(([score, count]) => ({ score: Number(score), count }))
-  }, [filteredAnime])
-
-  // Manga score distribution
-  const mangaScoreData = useMemo(() => {
-    const counts: Record<number, number> = {}
-    filteredManga.forEach((e: any) => e.score && (counts[e.score] = (counts[e.score] || 0) + 1))
-    return Object.entries(counts).map(([score, count]) => ({ score: Number(score), count }))
-  }, [filteredManga])
+  const animeScoreData = useMemo(() => scoreCounts(filteredAnime), [filteredAnime])
+  const mangaScoreData = useMemo(() => scoreCounts(filteredManga), [filteredManga])
 
   // Nothing to fetch or show if both lists are hidden from Stats
   if (!showAnimeStats && !showMangaStats) {
@@ -218,33 +238,14 @@ export const StatsTab: React.FC = () => {
       {/* Anime Stats Section */}
       {showAnimeStats && (
       <div className="mb-8 mt-4">
-        <h3 className="text-xl text-gray font-bold text-center mb-2">Anime Stats</h3>
-        
-        {/* Anime Stats Display */}
-        <div className="flex justify-center gap-[114px] m-4 -translate-x-2">
-          <div className="flex space-x-4 items-center justify-center">
-            <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg">
-              <MonitorCheck size={20} className="text-gray" />
-            </div>
-            <div className="text-start">
-              <div className="text-2xl font-bold" style={{ color: profileColor }}>
-                {totalWatched}
-              </div>
-              <div className="text-sm text-gray tracking-wide font-semibold">Total Anime</div>
-            </div>
-          </div>
-          <div className="flex space-x-4 items-center justify-center">
-            <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg">
-              <Percent size={20} className="text-gray" />
-            </div>
-            <div className="text-start">
-              <div className="text-2xl font-bold" style={{ color: profileColor }}>
-                {animeMeanScore.toFixed(2)}
-              </div>
-              <div className="text-sm text-gray tracking-wide font-semibold">Mean Score</div>
-            </div>
-          </div>
-        </div>
+        <StatSummary
+          heading="Anime Stats"
+          icon={MonitorCheck}
+          total={filteredAnime.length}
+          totalLabel="Total Anime"
+          mean={animeMeanScore}
+          profileColor={profileColor}
+        />
 
         {/* Anime Filters */}
         <div className="pl-6 pr-6 flex justify-between items-start">
@@ -319,33 +320,14 @@ export const StatsTab: React.FC = () => {
       {/* Manga Stats Section */}
       {showMangaStats && (
       <div>
-        <h3 className="text-xl text-gray font-bold text-center mb-2">Manga Stats</h3>
-        
-        {/* Manga Stats Display */}
-        <div className="flex justify-center gap-[114px] m-4 -translate-x-2">
-          <div className="flex space-x-4 items-center justify-center">
-            <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg">
-              <BookOpen size={20} className="text-gray" />
-            </div>
-            <div className="text-start">
-              <div className="text-2xl font-bold" style={{ color: profileColor }}>
-                {totalRead}
-              </div>
-              <div className="text-sm text-gray tracking-wide font-semibold">Total Manga</div>
-            </div>
-          </div>
-          <div className="flex space-x-4 items-center justify-center">
-            <div className="flex justify-center items-center w-10 h-10 rounded-full bg-white-100 shadow-lg">
-              <Percent size={20} className="text-gray" />
-            </div>
-            <div className="text-start">
-              <div className="text-2xl font-bold" style={{ color: profileColor }}>
-                {mangaMeanScore.toFixed(2)}
-              </div>
-              <div className="text-sm text-gray tracking-wide font-semibold">Mean Score</div>
-            </div>
-          </div>
-        </div>
+        <StatSummary
+          heading="Manga Stats"
+          icon={BookOpen}
+          total={filteredManga.length}
+          totalLabel="Total Manga"
+          mean={mangaMeanScore}
+          profileColor={profileColor}
+        />
 
         {/* Manga Score Chart */}
         <div className="mt-6">

@@ -1,24 +1,7 @@
-import React, { useEffect, useState } from "react"
-import { useQuery, gql } from "@apollo/client"
-import { AnimeCard } from "./AnimeCard"
-import { StateMessage } from "./StateMessage"
-import { useSettings } from "../contexts/SettingsContext"
-import { useAniListData } from "../contexts/AniListDataContext"
-import { useStableOrder } from "../hooks/useStableOrder"
-import { Loader2, AlertCircle, Tv } from "lucide-react"
-import { getErrorMessage } from "../lib/apolloErrors"
-
-const VIEWER_QUERY = gql`
-  query {
-    Viewer {
-      id
-      name
-      avatar {
-        medium
-      }
-    }
-  }
-`
+import React from "react"
+import { gql } from "@apollo/client"
+import { Tv } from "lucide-react"
+import { MediaListTab, type MediaListConfig } from "./MediaListTab"
 
 const WATCHING_LIST_QUERY = gql`
   query ($userId: Int) {
@@ -51,251 +34,24 @@ const WATCHING_LIST_QUERY = gql`
   }
 `
 
-export const AnimeTab: React.FC = () => {
-  const {
-    profileColor,
-    titleLanguage,
-    displayAdultContent,
-    scoreFormat,
-    rowOrder,
-    manualCompletion,
-    separateEntries
-  } = useSettings()
-
-  const {
-    animeList,
-    animeDirty,
-    setAnimeList,
-    markStatsDirty,
-    clearAnimeDirty
-  } = useAniListData()
-
-  const { data: viewerData, loading: viewerLoading, error: viewerError } = useQuery(VIEWER_QUERY)
-  const userId = viewerData?.Viewer?.id
-
-  const { data, loading, error, refetch } = useQuery(WATCHING_LIST_QUERY, {
-    variables: { userId },
-    skip: !userId
-  })
-
-  // Tracks how many cards currently have the mouse over them (0 or 1 in
-  // practice, but a counter avoids any enter/leave ordering glitches)
-  const [hoverCount, setHoverCount] = useState(0)
-  const handleHoverChange = (isHovering: boolean) =>
-    setHoverCount((count) => count + (isHovering ? 1 : -1))
-
-  // Only refetch if there's no cache or it's marked dirty
-  useEffect(() => {
-    if (!userId) return
-    if (animeList && !animeDirty) return
-    refetch().then((res) => {
-      const fetched = res.data?.MediaListCollection?.lists?.[0]?.entries ?? []
-      setAnimeList(fetched)
-      clearAnimeDirty()
-    })
-  }, [userId, animeDirty])
-
-  const watchingList = animeList ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
-
-  // Define the anime type
-  type AnimeEntry = {
-    id: number
-    title: string
-    cover: string
-    progress: number
-    score: number
-    nextAiringEpisode: number | null
-    totalEpisodes: number | null
-    isAdult: boolean
-    updatedAt: string
-    mediaId: number
+const animeConfig: MediaListConfig = {
+  type: "anime",
+  query: WATCHING_LIST_QUERY,
+  getTotal: (media) => media.episodes,
+  getNextAiringEpisode: (media) => media.nextAiringEpisode?.episode || null,
+  isCaughtUp: (anime) =>
+    Boolean(
+      (anime.totalEpisodes && anime.progress === anime.totalEpisodes) ||
+        (anime.nextAiringEpisode && anime.progress >= anime.nextAiringEpisode - 1)
+    ),
+  sections: { pending: "Behind", caughtUp: "Caught-Up", combined: "Watching" },
+  loadingMessage: "Loading your anime list...",
+  errorMessage: "Error loading anime list.",
+  empty: {
+    icon: Tv,
+    title: "No Anime In Progress",
+    message: "Anime you're currently watching will show up here."
   }
-
-  // Transform entries to our anime format
-  const transformedAnime: AnimeEntry[] = watchingList.map((entry: any) => ({
-    id: entry.id,
-    title: entry.media.title[titleLanguage.toLowerCase()],
-    cover: entry.media.coverImage.large,
-    progress: entry.progress,
-    score: entry.score || 0,
-    nextAiringEpisode: entry.media.nextAiringEpisode?.episode || null,
-    totalEpisodes: entry.media.episodes,
-    isAdult: entry.media.isAdult,
-    updatedAt: entry.updatedAt,
-    mediaId: entry.media.id
-  }))
-
-  // Filter adult content based on settings
-  const filteredAnime = transformedAnime.filter((anime: AnimeEntry) =>
-    displayAdultContent || !anime.isAdult
-  )
-
-  // Sort anime based on user preference
-  const sortedAnime = [...filteredAnime].sort((a, b) => {
-    switch (rowOrder) {
-      case "score":
-        return b.score - a.score || a.title.localeCompare(b.title)
-      case "title":
-        return a.title.localeCompare(b.title)
-      case "updatedAt":
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      default:
-        return a.id - b.id
-    }
-  })
-
-  // Separate entries if setting is enabled
-  const caughtUpAnime = separateEntries
-    ? sortedAnime.filter(
-        (anime) =>
-          (anime.totalEpisodes && anime.progress === anime.totalEpisodes) ||
-          (anime.nextAiringEpisode && anime.progress >= anime.nextAiringEpisode - 1)
-      )
-    : []
-
-  const behindAnime = separateEntries
-    ? sortedAnime.filter((anime) => !caughtUpAnime.includes(anime))
-    : sortedAnime
-
-  // Freeze grid position while a card is hovered, so adjusting a score/
-  // progress value can't re-sort a different card under the cursor mid-click
-  const hovering = hoverCount > 0
-  const orderedSortedAnime = useStableOrder(sortedAnime, hovering)
-  const orderedBehindAnime = useStableOrder(behindAnime, hovering)
-  const orderedCaughtUpAnime = useStableOrder(caughtUpAnime, hovering)
-
-  // Early return when loading or getting an error
-  if (viewerLoading || loading)
-    return <StateMessage icon={Loader2} spin message="Loading your anime list..." />
-  if (viewerError || error)
-    return (
-      <StateMessage
-        icon={AlertCircle}
-        tone="error"
-        message={getErrorMessage(viewerError || error, "Error loading anime list.")}
-      />
-    )
-
-  // Helper for Local UI updates
-  const updateLocalList = (entryId: number, updates: Partial<any>) => {
-    if (animeList) {
-      const updated = animeList.map(entry => 
-        entry.id === entryId ? { ...entry, ...updates } : entry
-      )
-      setAnimeList(updated)
-    }
-  }
-
-  const handleProgressChange = (anime: any, newProgress: number) => {
-    const maxEpisodes = anime.totalEpisodes || 9999
-    const clampedProgress = Math.min(Math.max(0, newProgress), maxEpisodes)
-    const finished = anime.totalEpisodes && clampedProgress >= anime.totalEpisodes
-
-    if (finished && !manualCompletion) {
-      // AniList completes the entry server-side once progress hits the
-      // total, so remove it locally now instead of leaving a stale card
-      // until the popup is closed and reopened
-      if (animeList) {
-        setAnimeList(animeList.filter(item => item.id !== anime.id))
-      }
-      markStatsDirty()
-    } else {
-      // Local UI Update
-      updateLocalList(anime.id, { progress: clampedProgress })
-    }
-
-    // Queue for background sync
-    chrome.runtime.sendMessage({
-      action: "QUEUE_UPDATE",
-      payload: { entryId: anime.id, progress: clampedProgress }
-    })
-
-    if (finished && manualCompletion) {
-      chrome.runtime.sendMessage({
-        action: "QUEUE_UPDATE",
-        payload: { entryId: anime.id, status: "CURRENT" }
-      })
-    }
-  }
-
-  const handleScoreChange = (anime: any, score: number) => {
-    // Local UI Update
-    updateLocalList(anime.id, { score })
-
-    // Queue for background sync
-    chrome.runtime.sendMessage({
-      action: "QUEUE_UPDATE",
-      payload: { entryId: anime.id, score }
-    })
-  }
-
-  const handleMarkCompleted = (anime: any) => {
-    // Instant local removal (mark as completed)
-    if (animeList) {
-      setAnimeList(animeList.filter(item => item.id !== anime.id))
-    }
-    markStatsDirty()
-
-    // Queue to background
-    chrome.runtime.sendMessage({
-      action: "QUEUE_UPDATE",
-      payload: { entryId: anime.id, status: "COMPLETED" }
-    })
-  }
-
-  const renderAnimeGrid = (animeList: any[], title: string) => (
-    <div className="mb-6">
-      <h3 className="text-lg text-gray font-medium mb-2">
-        {title} ({animeList.length})
-      </h3>
-      <div className="grid grid-cols-3 gap-4">
-        {animeList.map((anime) => (
-          <AnimeCard
-            key={anime.id}
-            anime={anime}
-            profileColor={profileColor}
-            onScoreChange={(score) => handleScoreChange(anime, score)}
-            onMarkCompleted={() => handleMarkCompleted(anime)}
-            onProgressChange={(progress) => handleProgressChange(anime, progress)}
-            loading={loading}
-            scoreFormat={scoreFormat}
-            displayAdultContent={displayAdultContent}
-            onHoverChange={handleHoverChange}
-          />
-        ))}
-      </div>
-    </div>
-  )
-
-  const isEmpty = separateEntries
-    ? behindAnime.length === 0 && caughtUpAnime.length === 0
-    : sortedAnime.length === 0
-
-  return (
-    <div className="p-4 flex-1 flex flex-col">
-      {isEmpty ? (
-        <StateMessage
-          icon={Tv}
-          title="No Anime In Progress"
-          message="Anime you're currently watching will show up here."
-        />
-      ) : separateEntries ? (
-        <>
-          {/* Show both sections only if both have entries, otherwise show only the non-empty one */}
-          {behindAnime.length > 0 && caughtUpAnime.length > 0 ? (
-            <>
-              {renderAnimeGrid(orderedBehindAnime, "Behind")}
-              {renderAnimeGrid(orderedCaughtUpAnime, "Caught-Up")}
-            </>
-          ) : behindAnime.length > 0 ? (
-            renderAnimeGrid(orderedBehindAnime, "Behind")
-          ) : (
-            renderAnimeGrid(orderedCaughtUpAnime, "Caught-Up")
-          )}
-        </>
-      ) : (
-        renderAnimeGrid(orderedSortedAnime, "Watching")
-      )}
-    </div>
-  )
 }
+
+export const AnimeTab: React.FC = () => <MediaListTab config={animeConfig} />
