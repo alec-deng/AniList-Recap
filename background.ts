@@ -16,7 +16,7 @@ class Storage {
     await chrome.storage.local.set(obj)
   }
 
-  static async remove(key: string): Promise<void> {
+  static async remove(key: string | string[]): Promise<void> {
     await chrome.storage.local.remove(key)
   }
 
@@ -37,14 +37,24 @@ class AniListRequestError extends Error {
   readonly status: number
   // Named even on failure: an aliased multi-mutation can partly succeed
   readonly data: unknown
+  // AniList's first error message, unwrapped — it answers both a rejected edit
+  // and a dead token with 400, and only the body tells them apart
+  readonly detail: string | undefined
 
-  constructor(message: string, status: number, data: unknown) {
+  constructor(message: string, status: number, data: unknown, detail?: string) {
     super(message)
     this.name = "AniListRequestError"
     this.status = status
     this.data = data
+    this.detail = detail
   }
 }
+
+// An expired or revoked token, which AniList reports as 400 rather than 401
+const isInvalidTokenError = (error: unknown): boolean =>
+  error instanceof AniListRequestError &&
+  error.status === 400 &&
+  !!error.detail?.toLowerCase().includes("invalid token")
 
 class AniList {
   #accessToken: string
@@ -79,7 +89,8 @@ class AniList {
       throw new AniListRequestError(
         `AniList request failed with ${response.status}${detail ? `: ${detail}` : ""}`,
         response.status,
-        json?.data
+        json?.data,
+        detail
       )
     }
 
@@ -87,7 +98,8 @@ class AniList {
       throw new AniListRequestError(
         json.errors.map((e: { message?: string }) => e.message).join("; "),
         response.status,
-        json?.data
+        json?.data,
+        json.errors[0]?.message
       )
     }
 
@@ -217,6 +229,16 @@ function reportSynced(data: unknown): Set<number> {
   return new Set(synced.map((entry) => entry.id))
 }
 
+// Deliberately not Auth.logout(): that flushes first, and the flush is what
+// just failed. Leaves pendingUpdates alone so nothing queued is lost.
+async function clearInvalidSession(): Promise<void> {
+  console.warn("[Background] AniList rejected the stored token; clearing session")
+  // One removal, not two: the storage.onChanged listener broadcasts AUTH_CHANGED
+  // per event, and two would race two CHECK_AUTH round trips whose responses can
+  // land out of order — the stale one last would leave the popup on the list UI.
+  await Storage.remove([Storage.DATA.ACCESS_TOKEN, Storage.DATA.USER])
+}
+
 async function flushAllPendingUpdates() {
   dropStaleUpdates()
   if (pendingUpdates.size === 0) return
@@ -245,10 +267,16 @@ async function flushAllPendingUpdates() {
 
     const landed = reportSynced(error instanceof AniListRequestError ? error.data : null)
 
-    // Only a rejection of the edit itself counts. Offline, an expired token, a
+    // A dead token shares the 400 of a rejected edit, so it must be excluded
+    // first — otherwise every queued edit burns an attempt and is dropped.
+    const authFailed = isInvalidTokenError(error)
+
+    // Only a rejection of the edit itself counts. Offline, a dead token, a
     // rate limit, and AniList's outage 403 say nothing about the edit — retry.
     const isPermanentRejection =
-      error instanceof AniListRequestError && (error.status === 400 || error.status === 404)
+      !authFailed &&
+      error instanceof AniListRequestError &&
+      (error.status === 400 || error.status === 404)
 
     for (const [id, data] of updatesToFlush) {
       if (landed.has(id)) {
@@ -271,6 +299,11 @@ async function flushAllPendingUpdates() {
     }
 
     await persistPendingUpdates()
+
+    // Only after the queue is safely mirrored: retrying a dead token just burns
+    // requests until the age-out, so drop the session and let the popup prompt a
+    // re-login. The queue survives and flushes once a valid token is back.
+    if (authFailed) await clearInvalidSession()
   }
 }
 
@@ -345,16 +378,9 @@ class Auth {
 // ============================================
 // Message Handler
 // ============================================
+// Popup-only: this extension ships no content scripts, so a tabs.sendMessage
+// fan-out would enumerate every tab to reach nothing.
 function broadcastAuthChange() {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      if (tab.id) {
-        // Tabs without a content script reject; that's fine
-        chrome.tabs.sendMessage(tab.id, { type: 'AUTH_CHANGED' }).catch(() => {})
-      }
-    })
-  })
-
   chrome.runtime.sendMessage({ type: 'AUTH_CHANGED' }).catch(() => {}) // popup may not be open
 }
 
@@ -383,6 +409,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }, 5000)
 
         sendResponse({ status: "queued" })
+        break
+
+      // Popup hit a dead token on a plain query, with nothing queued to flush
+      case "SESSION_EXPIRED":
+        clearInvalidSession()
+          .then(() => sendResponse({}))
+          .catch((error) => sendResponse({ error: error.message }))
         break
 
       case "USER":
