@@ -133,18 +133,23 @@ export const MediaCard: React.FC<Props> = ({
   const handleScoreInputBlur = () => {
     const numValue = parseFloat(tempScore)
 
-    if (isNaN(numValue) || numValue < 0 || numValue > maxScore) {
+    if (isNaN(numValue)) {
       setTempScore(score.toString())
       setIsEditingScore(false)
       setEditing(false)
       return
     }
 
+    // Clamped, not rejected: the arrows already stop at the bound rather than
+    // handing back the old value, so typing shouldn't answer it differently.
+    const clampedScore = Math.min(Math.max(numValue, 0), maxScore)
+
     // Sent unrounded — AniList applies the account's score format itself
-    setScore(numValue)
-    setTempScore(numValue.toString())
+    setScore(clampedScore)
+    setTempScore(clampedScore.toString())
     setIsEditingScore(false)
-    onScoreChange(numValue)
+    // Already at the bound is the arrow's disabled state — nothing to queue
+    if (clampedScore !== score) onScoreChange(clampedScore)
     // After the edit, never before: ending the interaction first would leave
     // the value landing on an unfrozen grid, with no animation.
     setEditing(false)
@@ -173,18 +178,22 @@ export const MediaCard: React.FC<Props> = ({
 
   const handleProgressInputBlur = () => {
     const numValue = parseInt(tempProgress)
-    
-    if (isNaN(numValue) || numValue < 0 || numValue > progressCeiling || !Number.isInteger(parseFloat(tempProgress))) {
+
+    // A fractional episode is malformed rather than out of range — no bound to clamp to
+    if (isNaN(numValue) || !Number.isInteger(parseFloat(tempProgress))) {
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
       setEditing(false)
       return
     }
 
-    setProgress(numValue)
-    setTempProgress(numValue.toString())
+    // Clamped to the same ceiling the arrows stop at — see handleScoreInputBlur
+    const clampedProgress = Math.min(Math.max(numValue, 0), progressCeiling)
+
+    setProgress(clampedProgress)
+    setTempProgress(clampedProgress.toString())
     setIsEditingProgress(false)
-    onProgressChange(numValue)
+    if (clampedProgress !== progress) onProgressChange(clampedProgress)
     // After the edit, never before — see handleScoreInputBlur
     setEditing(false)
   }
