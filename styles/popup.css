@@ -20,8 +20,15 @@
     outline-offset: 2px;
   }
 
+  /* The colour is repeated here, not just on the wildcard above: Firefox has its
+     own :focus-visible rule that paints in currentColor, and a bare * rule loses
+     to it — the ring came out matching each element's text. Same values in both
+     rules, so focus still changes outline-style alone and nothing animates. */
   :focus-visible {
+    outline-color: var(--profile-color, #3db4f2);
     outline-style: solid;
+    outline-width: 2px;
+    outline-offset: 2px;
   }
 }
 
