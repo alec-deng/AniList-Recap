@@ -27,7 +27,12 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
               ? '[color:var(--profile-color)]' 
               : 'text-gray hover:[color:var(--profile-color)]'
           }`}
-          onClick={() => onSelect(idx)}
+          onClick={() => {
+            if (selected !== idx) {
+              window.dispatchEvent(new Event("tab-change"))
+              onSelect(idx)
+            }
+          }}
         >
           {tab}
         </button>

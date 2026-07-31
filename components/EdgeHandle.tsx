@@ -74,7 +74,7 @@ const Grip: React.FC<{ shown: boolean }> = ({ shown }) => (
 export const EdgeHandle: React.FC = () => {
   const [metrics, setMetrics] = useState<Metrics>(HIDDEN)
   const [active, setActive] = useState(false)
-  const [revealed, setRevealed] = useState(true)
+  const [revealed, setRevealed] = useState(false)
   const dragRef = useRef<{ pointerY: number; scrollTop: number } | null>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nearEdgeRef = useRef(false)
@@ -91,7 +91,6 @@ export const EdgeHandle: React.FC = () => {
   useEffect(() => {
     const sync = () => setMetrics(measureHandle())
     sync()
-    refreshRef.current()
 
     const handleScroll = () => {
       sync()
@@ -107,6 +106,19 @@ export const EdgeHandle: React.FC = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll)
       observer.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    // The handle is a visual cue for the tab, so it hides when the tab changes
+    const handleTabChange = () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      setRevealed(false)
+    }
+
+    window.addEventListener("tab-change", handleTabChange)
+    return () => {
+      window.removeEventListener("tab-change", handleTabChange)
     }
   }, [])
 
