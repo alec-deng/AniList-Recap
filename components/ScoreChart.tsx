@@ -104,6 +104,9 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
             <BarChart 
               data={completeData}
               margin={{ top: 10, right: 10, bottom: 0, left: 10 }}
+              // Display only, so it must not be a tab stop: recharts 3 enables
+              // the accessibility layer by default, which adds tabIndex={0}
+              accessibilityLayer={false}
               style={{ outline: 'none', pointerEvents: 'none' }}
             >
               <YAxis 
@@ -146,6 +149,9 @@ export const ScoreChart: React.FC<Props> = ({ data, allScores }) => {
             <BarChart 
               data={completeData}
               margin={{ top: 0, right: 10, bottom: 0, left: 10 }}
+              // Display only, so it must not be a tab stop: recharts 3 enables
+              // the accessibility layer by default, which adds tabIndex={0}
+              accessibilityLayer={false}
               style={{ outline: 'none', pointerEvents: 'none' }}
             >
               <XAxis 

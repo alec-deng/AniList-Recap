@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* One focus ring for the whole popup, tinted with the user's AniList colour,
+   which the root sets as --profile-color. Lives in @layer base so a component
+   that genuinely needs its own treatment can still opt out with a utility.
+   Logged out there is no profile colour yet, hence the fallback. */
+@layer base {
+  /* Colour, width and offset are declared unconditionally rather than inside
+     :focus-visible: an element with transition-all would otherwise animate them
+     as the ring appears, fading it in from currentColor and growing it out from
+     the edge. Focus flips outline-style alone, which cannot be transitioned, so
+     the ring lands fully formed. */
+  *,
+  ::before,
+  ::after {
+    outline-color: var(--profile-color, #3db4f2);
+    outline-width: 2px;
+    outline-offset: 2px;
+  }
+
+  :focus-visible {
+    outline-style: solid;
+  }
+}
+
 /* Chrome sizes the popup window to the document, so a scrollbar appearing or
    disappearing resizes the whole window sideways by its own width. Every tab
    switch passes through the short loading state, which is enough to drop the

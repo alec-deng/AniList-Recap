@@ -29,6 +29,7 @@ export const CustomToggle: React.FC<CustomToggleProps> = ({
           onClick={() => onChange(option.value)}
           className={`
             flex-1 py-1 text-sm font-medium rounded-md transition-all duration-200
+            outline-2 outline-offset-0
             ${value === option.value ? 'text-white-100' : 'text-gray hover:text-gray'}
           `}
           style={{

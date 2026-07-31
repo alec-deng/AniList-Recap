@@ -18,7 +18,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
       {tabs.map((tab, idx) => (
         <button
           key={tab}
-          className={`min-w-[64px] text-center text-sm font-medium rounded outline-offset-4 transition-colors duration-200 ${
+          className={`min-w-[64px] text-center text-sm font-medium rounded transition-colors duration-200 ${
             selected === idx 
               ? '[color:var(--profile-color)]' 
               : 'text-gray hover:[color:var(--profile-color)]'

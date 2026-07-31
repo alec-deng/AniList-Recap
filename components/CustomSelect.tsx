@@ -48,7 +48,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray/30 rounded-lg bg-white-100 text-gray focus:outline-none text-left flex items-center justify-between"
+        className="w-full px-3 py-2 border border-gray/30 rounded-lg bg-white-100 text-gray text-left flex items-center justify-between"
         style={{
           borderColor: isFocused ? profileColor : undefined
         }}

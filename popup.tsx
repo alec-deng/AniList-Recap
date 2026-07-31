@@ -56,7 +56,10 @@ function PopupContent() {
   const SelectedComponent = visibleTabs[selectedIndex]?.Component
 
   return (
-    <div className="w-[500px] min-h-[400px] flex flex-col">
+    <div
+      className="w-[500px] min-h-[400px] flex flex-col"
+      style={{ '--profile-color': profileColor } as React.CSSProperties}
+    >
       <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#12162a]">
         <div className="flex items-center space-x-4">
           {avatar && (

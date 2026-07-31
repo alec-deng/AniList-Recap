@@ -38,7 +38,7 @@ export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
         type="checkbox"
         checked={isChecked}
         onChange={handleChange}
-        className="peer opacity-0 absolute cursor-pointer w-0 h-0"
+        className="peer opacity-0 absolute cursor-pointer w-0 h-0 focus-visible:outline-none"
       />
 
       {/* Custom checkbox visual. The input is what takes focus, but it is 0x0

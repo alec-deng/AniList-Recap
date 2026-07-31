@@ -274,14 +274,14 @@ export const MediaCard: React.FC<Props> = ({
             </span>
             <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
               <button
-                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleProgressChange(progress + 1)}
                 disabled={progress >= maxEpisodes}
               >
                 <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
-                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleProgressChange(progress - 1)}
                 disabled={progress <= 0}
               >
@@ -293,14 +293,14 @@ export const MediaCard: React.FC<Props> = ({
           <div className="flex items-center">
             <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
               <button
-                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleScoreChange(score + 1)}
                 disabled={score >= maxScore}
               >
                 <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
-                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleScoreChange(score - 1)}
                 disabled={score <= 0}
               >
