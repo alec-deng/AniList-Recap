@@ -38,22 +38,12 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [mangaDirty, setMangaDirty] = useState(false)
   const [mangaStatsDirty, setMangaStatsDirty] = useState(false)
 
-  const markAnimeDirty = useCallback(() => {
-    setAnimeList([])
-    setAnimeDirty(true)
-  }, [])
-  const markStatsDirty = useCallback(() => {
-    setStatsList([])
-    setStatsDirty(true)
-  }, [])
-  const markMangaDirty = useCallback(() => {
-    setMangaList([])
-    setMangaDirty(true)
-  }, [])
-  const markMangaStatsDirty = useCallback(() => {
-    setMangaStatsList([])
-    setMangaStatsDirty(true)
-  }, [])
+  // The flag alone drives the refetch. Blanking the list too made the refetch
+  // window render as an empty list — "0 / 0.00" in Stats reads as a real answer.
+  const markAnimeDirty = useCallback(() => setAnimeDirty(true), [])
+  const markStatsDirty = useCallback(() => setStatsDirty(true), [])
+  const markMangaDirty = useCallback(() => setMangaDirty(true), [])
+  const markMangaStatsDirty = useCallback(() => setMangaStatsDirty(true), [])
   // Corrects the optimistic updatedAt the list tab writes, with the server's real stamp
   useEffect(() => {
     const handleMessage = (message: any) => {

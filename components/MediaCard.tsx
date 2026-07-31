@@ -113,6 +113,17 @@ export const MediaCard: React.FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // The list can be replaced under a mounted card — a score format change
+  // rescales every score. Skipped mid-edit so it can't clobber what's typed.
+  useEffect(() => {
+    if (!isEditingScore) setScore(anime.score)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anime.score])
+  useEffect(() => {
+    if (!isEditingProgress) setProgress(anime.progress)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anime.progress])
+
   if (anime.isAdult && !displayAdultContent) {
     return null
   }
