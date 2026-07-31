@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Chrome sizes the popup window to the document, so a scrollbar appearing or
+   disappearing resizes the whole window sideways by its own width. Every tab
+   switch passes through the short loading state, which is enough to drop the
+   scrollbar and snap it back. Reserving the gutter keeps the width fixed. */
+html {
+  scrollbar-gutter: stable;
+}
