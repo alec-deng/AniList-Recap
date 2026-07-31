@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { SettingsProvider, useSettings } from './contexts/SettingsContext'
-import { AniListDataProvider } from "./contexts/AniListDataContext"
+import { AniListDataProvider, useAniListData } from "./contexts/AniListDataContext"
 import { ApolloProvider } from "@apollo/client"
 import { client } from "./apollo/client"
 import { Tabs } from "./components/Tabs"
@@ -26,6 +26,7 @@ function PopupContent() {
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
   const { profileColor, tabVisibility } = useSettings()
+  const { resetData } = useAniListData()
 
   const visibleTabs = TAB_DEFS.filter(({ key }) => {
     if (key === "anime") return tabVisibility !== "manga"
@@ -38,6 +39,14 @@ function PopupContent() {
       setSelectedKey(visibleTabs[0].key)
     }
   }, [tabVisibility])
+
+  // Reset all local data when user logs out, to avoid showing stale data from previous user
+  useEffect(() => {
+    if (!user) {
+      setSelectedKey(visibleTabs[0].key)
+      resetData()
+    }
+  }, [user])
 
   if (!user) {
     return <LoginPage />

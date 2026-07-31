@@ -23,6 +23,7 @@ type AniListDataContextType = {
   clearStatsDirty: () => void
   clearMangaDirty: () => void
   clearMangaStatsDirty: () => void
+  resetData: () => void
 }
 
 const AniListDataContext = createContext<AniListDataContextType | null>(null)
@@ -80,6 +81,18 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const clearMangaDirty = useCallback(() => setMangaDirty(false), [])
   const clearMangaStatsDirty = useCallback(() => setMangaStatsDirty(false), [])
 
+  // Back to the state a freshly opened popup starts in.
+  const resetData = useCallback(() => {
+    setAnimeList(null)
+    setStatsList(null)
+    setMangaList(null)
+    setMangaStatsList(null)
+    setAnimeDirty(false)
+    setStatsDirty(false)
+    setMangaDirty(false)
+    setMangaStatsDirty(false)
+  }, [])
+
   return (
     <AniListDataContext.Provider
       value={{
@@ -102,7 +115,8 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         clearAnimeDirty,
         clearStatsDirty,
         clearMangaDirty,
-        clearMangaStatsDirty
+        clearMangaStatsDirty,
+        resetData
       }}
     >
       {children}
