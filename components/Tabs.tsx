@@ -14,11 +14,11 @@ export const Tabs: React.FC<TabsProps> = ({ tabs, selected, onSelect }) => {
   const gapClass = tabs.length >= 4 ? 'gap-x-12' : 'gap-x-20'
 
   return (
-    <div className={`flex justify-center ${gapClass} px-10`} style={{ '--profile-color': profileColor } as React.CSSProperties}>
+    <div className={`flex justify-center ${gapClass} px-10 pt-[0.0625rem] pb-[0.55625rem]`} style={{ '--profile-color': profileColor } as React.CSSProperties}>
       {tabs.map((tab, idx) => (
         <button
           key={tab}
-          className={`min-w-[64px] text-center pt-0.5 pb-2 text-sm font-medium transition-colors duration-200 ${
+          className={`min-w-[64px] text-center text-sm font-medium rounded outline-offset-4 transition-colors duration-200 ${
             selected === idx 
               ? '[color:var(--profile-color)]' 
               : 'text-gray hover:[color:var(--profile-color)]'

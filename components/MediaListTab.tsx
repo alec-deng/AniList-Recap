@@ -585,7 +585,6 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
               onScoreChange={(score) => handleScoreChange(item, score)}
               onMarkCompleted={() => handleMarkCompleted(item)}
               onProgressChange={(progress) => handleProgressChange(item, progress)}
-              loading={loading}
               scoreFormat={scoreFormat}
               displayAdultContent={displayAdultContent}
               onHoverChange={(hovering) => handleHoverChange(item.id, hovering)}

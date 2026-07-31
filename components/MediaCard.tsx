@@ -18,7 +18,6 @@ type Props = {
   onScoreChange: (score: number) => void
   onMarkCompleted: () => void
   onProgressChange: (progress: number) => void
-  loading?: boolean
   scoreFormat: string
   displayAdultContent: boolean
   onHoverChange?: (hovering: boolean) => void
@@ -60,7 +59,6 @@ export const MediaCard: React.FC<Props> = ({
   onScoreChange, 
   onMarkCompleted,
   onProgressChange,
-  loading,
   scoreFormat,
   displayAdultContent,
   onHoverChange,
@@ -225,12 +223,11 @@ export const MediaCard: React.FC<Props> = ({
       }}
     >
       {showCompletionButton && (
-        <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+        <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-hover:pointer-events-auto transition-opacity duration-150">
           <button
-            className="w-full text-white px-2 py-1 rounded text-xs font-medium shadow-lg"
+            className="w-full text-white px-2 py-1 rounded text-xs font-medium shadow-lg hover:brightness-105"
             style={{ backgroundColor: profileColor }}
             onClick={onMarkCompleted}
-            disabled={loading}
           >
             Mark as Completed
           </button>
@@ -238,7 +235,7 @@ export const MediaCard: React.FC<Props> = ({
       )}
 
       <div className="absolute bottom-0 left-0 right-0 bg-black/65 p-3">
-        <h4 className="font-medium text-xs leading-tight mb-1 text-white">
+        <h4 className="font-medium text-xs leading-tight mb-1 text-white line-clamp-2">
           {anime.title}
         </h4>
         
@@ -252,7 +249,7 @@ export const MediaCard: React.FC<Props> = ({
                 onBlur={handleProgressInputBlur}
                 onKeyDown={handleProgressInputKeyDown}
                 onFocus={(e) => e.currentTarget.select()}
-                className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,
                   borderBottomColor: `${profileColor}50` // 50% opacity
@@ -261,7 +258,7 @@ export const MediaCard: React.FC<Props> = ({
               />
             ) : (
               <span 
-                className="text-xs cursor-pointer hover:underline flash-on-group-hover"
+                className="text-xs cursor-pointer hover:underline"
                 style={{ color: profileColor }}
                 onClick={() => {
                   setIsEditingProgress(true)
@@ -272,21 +269,21 @@ export const MediaCard: React.FC<Props> = ({
                 {progress}
               </span>
             )}
-            <span className="text-xs flash-on-group-hover" style={{ color: profileColor }}>
+            <span className="text-xs" style={{ color: profileColor }}>
               {anime.totalEpisodes && `/${anime.totalEpisodes}`}
             </span>
-            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
+            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleProgressChange(progress + 1)}
-                disabled={loading || progress >= maxEpisodes}
+                disabled={progress >= maxEpisodes}
               >
                 <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleProgressChange(progress - 1)}
-                disabled={loading || progress <= 0}
+                disabled={progress <= 0}
               >
                 <ArrowIcon direction="down" color={profileColor} />
               </button>
@@ -294,18 +291,18 @@ export const MediaCard: React.FC<Props> = ({
           </div>
           
           <div className="flex items-center">
-            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto duration-150">
+            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleScoreChange(score + 1)}
-                disabled={loading || score >= maxScore}
+                disabled={score >= maxScore}
               >
                 <ArrowIcon direction="up" color={profileColor} />
               </button>
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                 onClick={() => handleScoreChange(score - 1)}
-                disabled={loading || score <= 0}
+                disabled={score <= 0}
               >
                 <ArrowIcon direction="down" color={profileColor} />
               </button>
@@ -318,7 +315,7 @@ export const MediaCard: React.FC<Props> = ({
                 onBlur={handleScoreInputBlur}
                 onKeyDown={handleScoreInputKeyDown}
                 onFocus={(e) => e.currentTarget.select()}
-                className="flash-on-group-hover bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,
                   borderBottomColor: `${profileColor}50` // 50% opacity
@@ -327,7 +324,7 @@ export const MediaCard: React.FC<Props> = ({
               />
             ) : (
               <span 
-                className="text-xs cursor-pointer hover:underline flash-on-group-hover"
+                className="text-xs cursor-pointer hover:underline"
                 style={{ color: profileColor }}
                 onClick={() => {
                   setIsEditingScore(true)

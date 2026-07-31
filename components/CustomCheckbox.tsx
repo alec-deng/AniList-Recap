@@ -29,18 +29,22 @@ export const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
   };
 
   return (
-    <label className={`flex items-center cursor-pointer ${className}`}>
+    <label
+      className={`flex items-center cursor-pointer ${className}`}
+      style={{ '--profile-color': profileColor } as React.CSSProperties}
+    >
       {/* Hidden native checkbox for accessibility */}
       <input
         type="checkbox"
         checked={isChecked}
         onChange={handleChange}
-        className="opacity-0 absolute cursor-pointer w-0 h-0"
+        className="peer opacity-0 absolute cursor-pointer w-0 h-0"
       />
-      
-      {/* Custom checkbox visual */}
-      <span 
-        className="h-4 w-4 relative transition-all duration-100 rounded border-2"
+
+      {/* Custom checkbox visual. The input is what takes focus, but it is 0x0
+          and transparent — so the ring has to be drawn on this instead. */}
+      <span
+        className="h-4 w-4 relative transition-all duration-100 rounded border-2 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:[outline-color:var(--profile-color)]"
         style={{
           backgroundColor: isChecked ? profileColor : '#ffffff',
           borderColor: isChecked ? profileColor : '#ddd'

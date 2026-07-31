@@ -67,19 +67,23 @@ function PopupContent() {
           )}
         </div>
         
-        <a 
-          href="https://anilist.co" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="text-white flex items-center space-x-2 pt-6 group transition-colors duration-200"
-          style={{ '--profile-color': profileColor } as React.CSSProperties}
-        >
-          <span className="text-sm font-medium">AniList</span>
-          <SquareArrowOutUpRight  
-            className="group-hover:[color:var(--profile-color)] transition-colors duration-200" 
-            size={16} 
-          />
-        </a>
+        {/* The offset that positions the link sits on the wrapper, not the link:
+            on the link it padded out the focus outline into a tall empty box. */}
+        <div className="pt-6">
+          <a
+            href="https://anilist.co"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white flex items-center space-x-2 rounded p-0.5 group transition-colors duration-200"
+            style={{ '--profile-color': profileColor } as React.CSSProperties}
+          >
+            <span className="text-sm font-medium">AniList</span>
+            <SquareArrowOutUpRight
+              className="group-hover:[color:var(--profile-color)] transition-colors duration-200"
+              size={16}
+            />
+          </a>
+        </div>
       </div>
 
       <Tabs
