@@ -1,24 +1,13 @@
-import React, { useEffect, useRef, useState } from "react"
-import { useQuery, gql, type DocumentNode } from "@apollo/client"
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useQuery, type DocumentNode } from "@apollo/client"
 import { MediaCard } from "./MediaCard"
 import { StateMessage } from "./StateMessage"
 import { useSettings } from "../contexts/SettingsContext"
 import { useAniListData } from "../contexts/AniListDataContext"
 import { useStableOrder } from "../hooks/useStableOrder"
+import { useUserId } from "../hooks/useUserId"
 import { Loader2, AlertCircle, type LucideIcon } from "lucide-react"
 import { getErrorMessage } from "../lib/apolloErrors"
-
-const VIEWER_QUERY = gql`
-  query {
-    Viewer {
-      id
-      name
-      avatar {
-        medium
-      }
-    }
-  }
-`
 
 export type MediaEntry = {
   id: number
@@ -140,8 +129,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
 
   const { list, dirty, setList, clearDirty, markStatsDirty } = useListState(config.type)
 
-  const { data: viewerData, loading: viewerLoading, error: viewerError } = useQuery(VIEWER_QUERY)
-  const userId = viewerData?.Viewer?.id
+  const { userId, loading: userIdLoading } = useUserId()
 
   const { data, loading, error, refetch } = useQuery(config.query, {
     variables: { userId },
@@ -340,15 +328,21 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   const releaseOrderRef = useRef(releaseOrder)
   releaseOrderRef.current = releaseOrder
 
-  // A commit later, not the same batch — release+refreeze together would leave
-  // useStableOrder never seeing the unfrozen render, pinning the pre-reorder order.
+  // Flag to schedule refreeze after the unfrozen state successfully commits.
+  const wantsRefreezeRef = useRef(false)
   const scheduleRefreeze = () => {
-    framesRef.current.push(
-      requestAnimationFrame(() => {
-        if (hoveredIdRef.current !== null) setHoldOrder(true)
-      })
-    )
+    wantsRefreezeRef.current = true
   }
+
+  // Driven by a layout effect to guarantee the DOM actually reordered before
+  // refreezing, preventing React batching from skipping the unfrozen render —
+  // a rAF can be served before the release commits. Keyed on holdOrder so it
+  // runs on a freeze change, not on every commit during load.
+  useLayoutEffect(() => {
+    if (holdOrder || !wantsRefreezeRef.current) return
+    wantsRefreezeRef.current = false
+    if (hoveredIdRef.current !== null) setHoldOrder(true)
+  }, [holdOrder])
 
   // Fades a card out, then drops it — shared by both routes off a list
   const startRemoval = (entryId: number) => {
@@ -486,14 +480,14 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (viewerLoading || loading)
+  if (userIdLoading || loading)
     return <StateMessage icon={Loader2} spin message={config.loadingMessage} />
-  if (viewerError || error)
+  if (error)
     return (
       <StateMessage
         icon={AlertCircle}
         tone="error"
-        message={getErrorMessage(viewerError || error, config.errorMessage)}
+        message={getErrorMessage(error, config.errorMessage)}
       />
     )
 

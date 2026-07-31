@@ -1,13 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import { useQuery, gql, type ApolloError } from "@apollo/client"
-
-const VIEWER_QUERY = gql`
-  query {
-    Viewer {
-      id
-    }
-  }
-`
+import { useUserId } from "../hooks/useUserId"
 
 const SETTINGS_QUERY = gql`
   query ($userId: Int) {
@@ -77,27 +70,68 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showAnimeStats, setShowAnimeStatsState] = useState<boolean>(true)
   const [showMangaStats, setShowMangaStatsState] = useState<boolean>(true)
 
-  const { data: viewerData, error: viewerError } = useQuery(VIEWER_QUERY)
-  const userId = viewerData?.Viewer?.id
+  const { userId, loading: userIdLoading } = useUserId()
 
-  const { data: settingsData, loading, error: settingsError } = useQuery(SETTINGS_QUERY, {
+  const { data: settingsData, loading: settingsLoading, error } = useQuery(SETTINGS_QUERY, {
     variables: { userId },
     skip: !userId
   })
 
-  const error = viewerError || settingsError
+  const loading = userIdLoading || settingsLoading
+
+  // The server's answer always wins over the cache, however they interleave.
+  const serverPrefsRef = useRef(false)
 
   useEffect(() => {
     if (settingsData?.User?.options) {
       const options = settingsData.User.options
       const mediaListOptions = settingsData.User.mediaListOptions
-      setProfileColorState(options.profileColor || 'blue')
-      setTitleLanguageState(options.titleLanguage || 'ROMAJI')
-      setDisplayAdultContentState(options.displayAdultContent || false)
-      setScoreFormatState(mediaListOptions.scoreFormat || 'POINT_10')
-      setRowOrderState(mediaListOptions.rowOrder || 'score')
+      const prefs = {
+        profileColor: options.profileColor || 'blue',
+        titleLanguage: options.titleLanguage || 'ROMAJI',
+        displayAdultContent: options.displayAdultContent || false,
+        scoreFormat: mediaListOptions.scoreFormat || 'POINT_10',
+        rowOrder: mediaListOptions.rowOrder || 'score'
+      }
+      serverPrefsRef.current = true
+      setProfileColorState(prefs.profileColor)
+      setTitleLanguageState(prefs.titleLanguage)
+      setDisplayAdultContentState(prefs.displayAdultContent)
+      setScoreFormatState(prefs.scoreFormat)
+      setRowOrderState(prefs.rowOrder)
+      // Mirrored so the next open paints these instead of the defaults
+      chrome.storage.local.set({ ...prefs, prefsUserId: userId })
     }
   }, [settingsData])
+
+  // Stamped with the account they came from, so another user never inherits
+  // them — a cached score format would render visibly wrong numbers.
+  useEffect(() => {
+    if (!userId) return
+
+    chrome.storage.local.get<{
+      prefsUserId?: number
+      profileColor?: string
+      titleLanguage?: string
+      displayAdultContent?: boolean
+      scoreFormat?: string
+      rowOrder?: string
+    }>([
+      'prefsUserId',
+      'profileColor',
+      'titleLanguage',
+      'displayAdultContent',
+      'scoreFormat',
+      'rowOrder'
+    ], (result) => {
+      if (serverPrefsRef.current || result.prefsUserId !== userId) return
+      setProfileColorState(result.profileColor || 'blue')
+      setTitleLanguageState(result.titleLanguage || 'ROMAJI')
+      setDisplayAdultContentState(result.displayAdultContent || false)
+      setScoreFormatState(result.scoreFormat || 'POINT_10')
+      setRowOrderState(result.rowOrder || 'score')
+    })
+  }, [userId])
 
   useEffect(() => {
     chrome.storage.local.get<{
@@ -115,20 +149,27 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     })
   }, [])
 
+  // These five also write through, or the cache would serve the pre-edit value
+  // until the next successful settings query.
   const setProfileColor = async (color: string) => {
     setProfileColorState(color)
+    chrome.storage.local.set({ profileColor: color })
   }
   const setTitleLanguage = async (language: string) => {
     setTitleLanguageState(language)
+    chrome.storage.local.set({ titleLanguage: language })
   }
   const setDisplayAdultContent = async (display: boolean) => {
     setDisplayAdultContentState(display)
+    chrome.storage.local.set({ displayAdultContent: display })
   }
   const setScoreFormat = async (format: string) => {
     setScoreFormatState(format)
+    chrome.storage.local.set({ scoreFormat: format })
   }
   const setRowOrder = async (order: string) => {
     setRowOrderState(order)
+    chrome.storage.local.set({ rowOrder: order })
   }
   const setManualCompletion = async (manual: boolean) => {
     setManualCompletionState(manual)
