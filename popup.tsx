@@ -45,6 +45,11 @@ function PopupContent() {
     }
   }, [tabVisibility])
 
+  // The whole page scrolls, so an offset would otherwise carry into the next tab
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [selectedKey])
+
   // Reset all local data when user logs out, to avoid showing stale data from previous user
   useEffect(() => {
     if (!user) {
