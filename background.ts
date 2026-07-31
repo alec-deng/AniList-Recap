@@ -169,7 +169,19 @@ const MAX_FLUSH_ATTEMPTS = 3
 
 let globalDebounceTimer: ReturnType<typeof setTimeout> | null = null
 const pendingUpdates = new Map<number, QueuedUpdate>()
+// The batch being sent right now. pendingUpdates is cleared before the await, so
+// without this a popup opening mid-flush reads an empty queue and paints the
+// server's pre-edit value. Not persisted — the storage mirror deliberately keeps
+// the pre-flush batch until the request settles.
+let inFlightUpdates = new Map<number, QueuedUpdate>()
 const failedAttempts = new Map<number, number>()
+
+// pendingUpdates last: an edit made during the request supersedes the one in flight
+function mergedPendingUpdates(): Map<number, QueuedUpdate> {
+  const merged = new Map(inFlightUpdates)
+  for (const [id, data] of pendingUpdates) merged.set(id, data)
+  return merged
+}
 
 async function persistPendingUpdates(): Promise<void> {
   if (pendingUpdates.size === 0) {
@@ -252,6 +264,7 @@ async function flushAllPendingUpdates() {
   if (!token) return
 
   const updatesToFlush = new Map(pendingUpdates)
+  inFlightUpdates = updatesToFlush
   pendingUpdates.clear()
 
   try {
@@ -304,6 +317,10 @@ async function flushAllPendingUpdates() {
     // requests until the age-out, so drop the session and let the popup prompt a
     // re-login. The queue survives and flushes once a valid token is back.
     if (authFailed) await clearInvalidSession()
+  } finally {
+    // After the catch, so anything re-queued is already back in pendingUpdates.
+    // Guarded because this function is re-entrant — a later flush owns the slot.
+    if (inFlightUpdates === updatesToFlush) inFlightUpdates = new Map()
   }
 }
 
@@ -363,6 +380,10 @@ class Auth {
       Storage.set(Storage.DATA.USER, user),
     ])
 
+    // The dead-token path re-queued these and then cleared the session. Not
+    // awaited — the popup is waiting on this response to leave LoginPage.
+    flushAllPendingUpdates()
+
     return user
   }
 
@@ -413,7 +434,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // Lets a freshly-opened popup show edits the server hasn't accepted yet
       case "GET_PENDING_UPDATES":
-        sendResponse({ updates: Array.from(pendingUpdates.entries()) })
+        sendResponse({ updates: Array.from(mergedPendingUpdates().entries()) })
         break
 
       // Popup hit a dead token on a plain query, with nothing queued to flush
