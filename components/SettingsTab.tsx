@@ -286,8 +286,8 @@ export const SettingsTab: React.FC = () => {
       <Section title="Cards per Row">
         <CustomSelect
           options={[
-            { value: "3", name: "3 per row" },
-            { value: "4", name: "4 per row" }
+            { value: "3", name: "3 Cards (Compact)" },
+            { value: "4", name: "4 Cards (Wide)" }
           ]}
           value={String(gridColumns)}
           onChange={handleGridColumnsChange}
