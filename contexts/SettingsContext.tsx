@@ -18,6 +18,9 @@ const SETTINGS_QUERY = gql`
   }
 `
 
+// Local-only device preference; drives the popup width too, see popup.tsx
+export type GridColumns = 3 | 4
+
 interface SettingsContextType {
   profileColor: string
   titleLanguage: string
@@ -29,6 +32,7 @@ interface SettingsContextType {
   tabVisibility: 'both' | 'anime' | 'manga'
   showAnimeStats: boolean
   showMangaStats: boolean
+  gridColumns: GridColumns
   setProfileColor: (color: string) => void
   setTitleLanguage: (language: string) => void
   setDisplayAdultContent: (display: boolean) => void
@@ -39,6 +43,7 @@ interface SettingsContextType {
   setTabVisibility: (visibility: 'both' | 'anime' | 'manga') => void
   setShowAnimeStats: (show: boolean) => void
   setShowMangaStats: (show: boolean) => void
+  setGridColumns: (columns: GridColumns) => void
   loading: boolean
   error: ApolloError | undefined
 }
@@ -69,6 +74,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [tabVisibility, setTabVisibilityState] = useState<'both' | 'anime' | 'manga'>('both')
   const [showAnimeStats, setShowAnimeStatsState] = useState<boolean>(true)
   const [showMangaStats, setShowMangaStatsState] = useState<boolean>(true)
+  const [gridColumns, setGridColumnsState] = useState<GridColumns>(3)
 
   const { userId, loading: userIdLoading } = useUserId()
 
@@ -140,12 +146,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       tabVisibility?: 'both' | 'anime' | 'manga'
       showAnimeStats?: boolean
       showMangaStats?: boolean
-    }>(['manualCompletion', 'separateEntries', 'tabVisibility', 'showAnimeStats', 'showMangaStats'], (result) => {
+      gridColumns?: GridColumns
+    }>(['manualCompletion', 'separateEntries', 'tabVisibility', 'showAnimeStats', 'showMangaStats', 'gridColumns'], (result) => {
       setManualCompletionState(result.manualCompletion || false)
       setSeparateEntriesState(result.separateEntries || false)
       setTabVisibilityState(result.tabVisibility || 'both')
       setShowAnimeStatsState(result.showAnimeStats ?? true)
       setShowMangaStatsState(result.showMangaStats ?? true)
+      setGridColumnsState(result.gridColumns === 4 ? 4 : 3)
     })
   }, [])
 
@@ -179,6 +187,10 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     setSeparateEntriesState(separate)
     chrome.storage.local.set({ separateEntries: separate })
   }
+  const setGridColumns = async (columns: GridColumns) => {
+    setGridColumnsState(columns)
+    chrome.storage.local.set({ gridColumns: columns })
+  }
   const setTabVisibility = async (visibility: 'both' | 'anime' | 'manga') => {
     setTabVisibilityState(visibility)
     chrome.storage.local.set({ tabVisibility: visibility })
@@ -211,6 +223,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       tabVisibility,
       showAnimeStats,
       showMangaStats,
+      gridColumns,
       setProfileColor,
       setTitleLanguage,
       setDisplayAdultContent,
@@ -221,6 +234,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       setTabVisibility,
       setShowAnimeStats,
       setShowMangaStats,
+      setGridColumns,
       loading,
       error
     }}>

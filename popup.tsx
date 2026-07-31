@@ -14,6 +14,10 @@ import { useAuth } from "./hooks/useAuth"
 import { SquareArrowOutUpRight  } from "lucide-react"
 import "./styles/popup.css"
 
+// Paired to hold the card at ~145x194 — a taller card costs a row of the 600px
+// viewport. Literal names: Tailwind's JIT can't see interpolated ones.
+const GRID_WIDTH = { 3: "w-[516px]", 4: "w-[678px]" } as const
+
 const TAB_DEFS = [
   { key: "anime", label: "Anime List", Component: AnimeTab },
   { key: "manga", label: "Manga List", Component: MangaTab },
@@ -26,7 +30,7 @@ function PopupContent() {
   const { user } = useAuth()
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
-  const { profileColor, tabVisibility } = useSettings()
+  const { profileColor, tabVisibility, gridColumns } = useSettings()
   const { resetData } = useAniListData()
 
   const visibleTabs = TAB_DEFS.filter(({ key }) => {
@@ -58,10 +62,15 @@ function PopupContent() {
 
   return (
     <div
-      className="w-[540px] min-h-[400px] flex flex-col"
+      className={`${GRID_WIDTH[gridColumns]} min-h-[400px] flex flex-col`}
       style={{ '--profile-color': profileColor } as React.CSSProperties}
     >
-      <div className="flex items-center justify-between mb-2 pt-10 pr-8 pl-10 bg-gradient-to-b from-[#242538] to-[#12162a]">
+      {/* Scales with the window, or the content hugs the edges at 708px */}
+      <div
+        className={`flex items-center justify-between mb-2 pt-10 bg-gradient-to-b from-[#242538] to-[#12162a] ${
+          gridColumns === 4 ? "pr-12 pl-14" : "pr-8 pl-10"
+        }`}
+      >
         <div className="flex items-center space-x-4">
           {avatar && (
             <img src={avatar} alt="Avatar" className="w-16 h-16 rounded-sm"/>

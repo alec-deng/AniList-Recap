@@ -116,7 +116,8 @@ export const StatsTab: React.FC = () => {
     displayAdultContent,
     scoreFormat,
     showAnimeStats,
-    showMangaStats
+    showMangaStats,
+    gridColumns
   } = useSettings()
 
   const {
@@ -228,7 +229,8 @@ export const StatsTab: React.FC = () => {
     )
 
   return (
-    <div className="p-2 flex-1 flex flex-col">
+    // Margin, not stretch — see SettingsTab
+    <div className={`py-2 flex-1 flex flex-col ${gridColumns === 4 ? "px-24" : "px-2"}`}>
 
       {showAnimeStats && (
       <div className="mb-8 mt-4">

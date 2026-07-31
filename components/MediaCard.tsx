@@ -235,7 +235,7 @@ export const MediaCard: React.FC<Props> = ({
       )}
 
       <div className="absolute bottom-0 left-0 right-0 bg-black/65 p-3">
-        <h4 className="font-medium text-xs leading-tight mb-1 text-white line-clamp-2">
+        <h4 className="font-medium text-xs leading-tight mb-1 text-white line-clamp-4">
           {anime.title}
         </h4>
         

@@ -101,6 +101,7 @@ export const SettingsTab: React.FC = () => {
     tabVisibility,
     showAnimeStats,
     showMangaStats,
+    gridColumns,
     setProfileColor,
     setTitleLanguage,
     setDisplayAdultContent,
@@ -111,6 +112,7 @@ export const SettingsTab: React.FC = () => {
     setTabVisibility,
     setShowAnimeStats,
     setShowMangaStats,
+    setGridColumns,
     loading,
     error
   } = useSettings()
@@ -195,6 +197,11 @@ export const SettingsTab: React.FC = () => {
     setTabVisibility(visibility as 'both' | 'anime' | 'manga')
   }
 
+  // Resizes the popup itself — Chrome sizes it to the document
+  const handleGridColumnsChange = async (columns: string) => {
+    setGridColumns(columns === '4' ? 4 : 3)
+  }
+
   if (error)
     return (
       <StateMessage
@@ -206,7 +213,8 @@ export const SettingsTab: React.FC = () => {
   if (loading) return <StateMessage icon={Loader2} spin message="Loading settings..." />
 
   return (
-    <div className="p-4 space-y-5 flex-1">
+    // Margin, not stretch — the same controls either way
+    <div className={`py-4 space-y-5 flex-1 ${gridColumns === 4 ? "px-24" : "px-4"}`}>
       <Section title="Profile Color">
         <div className="grid grid-cols-7 gap-2 ml-2">
           {colorOptions.map((option) => (
@@ -275,6 +283,20 @@ export const SettingsTab: React.FC = () => {
         />
       </Section>
 
+      <Section title="Cards per Row">
+        <CustomSelect
+          options={[
+            { value: "3", name: "3 per row" },
+            { value: "4", name: "4 per row" }
+          ]}
+          value={String(gridColumns)}
+          onChange={handleGridColumnsChange}
+          profileColor={profileColor}
+          className="w-full"
+        />
+      </Section>
+
+      {/* Kept above Show in Stats: changing it resets both stats toggles */}
       <Section title="Media Type">
         <CustomToggle
           options={[

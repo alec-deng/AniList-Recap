@@ -124,7 +124,8 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     scoreFormat,
     rowOrder,
     manualCompletion,
-    separateEntries
+    separateEntries,
+    gridColumns
   } = useSettings()
 
   const { list, dirty, setList, clearDirty, markStatsDirty } = useListState(config.type)
@@ -566,7 +567,8 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
       <h3 className="text-lg text-gray font-medium mb-2">
         {title} ({items.length})
       </h3>
-      <div className="grid grid-cols-3 gap-4">
+      {/* Literal names: Tailwind's JIT can't see interpolated classes */}
+      <div className={`grid gap-4 ${gridColumns === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
         {items.map((item) => (
           // Wrapper carries the animation class; removal wins over a move
           <div
