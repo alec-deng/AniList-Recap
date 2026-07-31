@@ -142,8 +142,18 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   const handleHoverChange = (id: number, isHovering: boolean) =>
     setHoveredId((cur) => (isHovering ? id : cur === id ? null : cur))
 
-  // Grid order + section split, frozen from hover through the reorder — else
-  // an edit's own re-sort would yank a card out from under the cursor.
+  // A card with an open input, which outranks hover: a typed value commits on
+  // blur, long after the pointer has usually left the card. Without it the
+  // interaction ended first and the edit landed on an unfrozen grid.
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const handleEditingChange = (id: number, isEditing: boolean) =>
+    setEditingId((cur) => (isEditing ? id : cur === id ? null : cur))
+
+  const activeId = editingId ?? hoveredId
+
+  // Grid order + section split, frozen from the first hover or focus through
+  // the reorder — else an edit's own re-sort would yank a card out from under
+  // the cursor.
   const [holdOrder, setHoldOrder] = useState(false)
 
   // The one card allowed to animate a *move*, and which phase it is in
@@ -172,8 +182,8 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   // Fades in flight, tracked synchronously alongside the removingIds state
   const removingCountRef = useRef(0)
 
-  const hoveredIdRef = useRef<number | null>(null)
-  hoveredIdRef.current = hoveredId
+  const activeIdRef = useRef<number | null>(null)
+  activeIdRef.current = activeId
   const holdOrderRef = useRef(false)
   holdOrderRef.current = holdOrder
 
@@ -341,7 +351,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   useLayoutEffect(() => {
     if (holdOrder || !wantsRefreezeRef.current) return
     wantsRefreezeRef.current = false
-    if (hoveredIdRef.current !== null) setHoldOrder(true)
+    if (activeIdRef.current !== null) setHoldOrder(true)
   }, [holdOrder])
 
   // Fades a card out, then drops it — shared by both routes off a list
@@ -444,11 +454,11 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   useEffect(() => {
     // Only freezing happens here — releaseOrder() alone decides when to
     // release, so the freeze outlives the pointer leaving, through the animation.
-    if (hoveredId !== null) setHoldOrder(true)
+    if (activeId !== null) setHoldOrder(true)
 
     const touched = touchedRef.current
 
-    if (touched !== null && hoveredId === touched) {
+    if (touched !== null && activeId === touched) {
       wantsEndRef.current = false // still on the edited card
       return
     }
@@ -464,7 +474,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
 
     endInteractionRef.current()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoveredId])
+  }, [activeId])
 
   // A tab switch or popup close never fires mouseleave
   useEffect(() => {
@@ -579,6 +589,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
               scoreFormat={scoreFormat}
               displayAdultContent={displayAdultContent}
               onHoverChange={(hovering) => handleHoverChange(item.id, hovering)}
+              onEditingChange={(editing) => handleEditingChange(item.id, editing)}
             />
           </div>
         ))}

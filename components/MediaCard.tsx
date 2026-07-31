@@ -22,6 +22,7 @@ type Props = {
   scoreFormat: string
   displayAdultContent: boolean
   onHoverChange?: (hovering: boolean) => void
+  onEditingChange?: (editing: boolean) => void
   // Cap used only when the media has no known total (e.g. an airing series)
   maxProgressFallback?: number
 }
@@ -63,6 +64,7 @@ export const MediaCard: React.FC<Props> = ({
   scoreFormat,
   displayAdultContent,
   onHoverChange,
+  onEditingChange,
   maxProgressFallback = 9999
 }) => {
   const [score, setScore] = useState(anime.score)
@@ -92,10 +94,22 @@ export const MediaCard: React.FC<Props> = ({
     isHoveredRef.current = false
     onHoverChange?.(false)
   }
+
+  // An open input is an interaction of its own: the typed value commits on
+  // blur, which is usually after the pointer has left the card.
+  const isEditingRef = useRef(false)
+  const setEditing = (editing: boolean) => {
+    isEditingRef.current = editing
+    onEditingChange?.(editing)
+  }
+
   useEffect(() => {
     return () => {
       if (isHoveredRef.current) {
         onHoverChange?.(false)
+      }
+      if (isEditingRef.current) {
+        onEditingChange?.(false)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +136,7 @@ export const MediaCard: React.FC<Props> = ({
     if (isNaN(numValue) || numValue < 0 || numValue > maxScore) {
       setTempScore(score.toString())
       setIsEditingScore(false)
+      setEditing(false)
       return
     }
 
@@ -130,6 +145,9 @@ export const MediaCard: React.FC<Props> = ({
     setTempScore(numValue.toString())
     setIsEditingScore(false)
     onScoreChange(numValue)
+    // After the edit, never before: ending the interaction first would leave
+    // the value landing on an unfrozen grid, with no animation.
+    setEditing(false)
   }
 
   const handleScoreInputKeyDown = (e: React.KeyboardEvent) => {
@@ -138,6 +156,7 @@ export const MediaCard: React.FC<Props> = ({
     } else if (e.key === 'Escape') {
       setTempScore(score.toString())
       setIsEditingScore(false)
+      setEditing(false)
     }
   }
 
@@ -158,6 +177,7 @@ export const MediaCard: React.FC<Props> = ({
     if (isNaN(numValue) || numValue < 0 || numValue > progressCeiling || !Number.isInteger(parseFloat(tempProgress))) {
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
+      setEditing(false)
       return
     }
 
@@ -165,6 +185,8 @@ export const MediaCard: React.FC<Props> = ({
     setTempProgress(numValue.toString())
     setIsEditingProgress(false)
     onProgressChange(numValue)
+    // After the edit, never before — see handleScoreInputBlur
+    setEditing(false)
   }
 
   const handleProgressInputKeyDown = (e: React.KeyboardEvent) => {
@@ -173,6 +195,7 @@ export const MediaCard: React.FC<Props> = ({
     } else if (e.key === 'Escape') {
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
+      setEditing(false)
     }
   }
 
@@ -234,6 +257,7 @@ export const MediaCard: React.FC<Props> = ({
                 onClick={() => {
                   setIsEditingProgress(true)
                   setTempProgress(progress.toString())
+                  setEditing(true)
                 }}
               >
                 {progress}
@@ -299,6 +323,7 @@ export const MediaCard: React.FC<Props> = ({
                 onClick={() => {
                   setIsEditingScore(true)
                   setTempScore(score.toString())
+                  setEditing(true)
                 }}
               >
                 {score}
