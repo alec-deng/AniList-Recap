@@ -32,10 +32,16 @@
   }
 }
 
-/* Chrome sizes the popup window to the document, so a scrollbar appearing or
-   disappearing resizes the whole window sideways by its own width. Every tab
-   switch passes through the short loading state, which is enough to drop the
-   scrollbar and snap it back. Reserving the gutter keeps the width fixed. */
+/* No native scrollbar on either engine. It takes layout width, and Chrome sizes
+   the popup window to its document, so the bar appearing widened the whole
+   window sideways. Wheel and trackpad scrolling are unaffected; the control
+   comes from components/EdgeHandle.tsx instead, which costs no width.
+   scrollbar-gutter: stable also stopped the resize, but left a blank strip down
+   every short tab. */
 html {
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }

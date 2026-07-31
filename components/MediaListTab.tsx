@@ -601,7 +601,9 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     : sorted.length === 0
 
   return (
-    <div className="p-4 flex-1 flex flex-col">
+    // px-6 rather than px-4: the EdgeHandle rides the right edge at 15px, 19px
+    // hovered, and needs a gutter it can sit in without lapping the cards
+    <div className="px-6 py-4 flex-1 flex flex-col">
       {isEmpty ? (
         <StateMessage
           icon={config.empty.icon}
