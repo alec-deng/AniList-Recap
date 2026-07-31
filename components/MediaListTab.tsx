@@ -93,6 +93,33 @@ const useListState = (type: MediaListConfig["type"]) => {
       }
 }
 
+type PendingEdit = { progress?: number; score?: number; status?: string }
+
+// The popup's optimistic state is React-only, so a remount falls back to what
+// the server has — which is the pre-edit value while anything is still queued
+// (an offline edit, or one made before the session expired). The queue is the
+// durable copy of that same intent, so re-apply it over the fetched list.
+const applyPendingEdits = (entries: any[], pending: Map<number, PendingEdit>) => {
+  if (pending.size === 0) return entries
+
+  return entries
+    // A queued COMPLETED would otherwise reappear: the query asks for CURRENT,
+    // and the server still lists it there until the flush lands.
+    .filter((entry) => {
+      const status = pending.get(entry.id)?.status
+      return !status || status === "CURRENT"
+    })
+    .map((entry) => {
+      const edit = pending.get(entry.id)
+      if (!edit) return entry
+      return {
+        ...entry,
+        ...(edit.progress !== undefined && { progress: edit.progress }),
+        ...(edit.score !== undefined && { score: edit.score })
+      }
+    })
+}
+
 const queueUpdate = (payload: {
   entryId: number
   progress?: number
@@ -172,25 +199,46 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     timersRef.current.push(setTimeout(fn, ms))
   }
 
+  // Read once per popup open — edits made in-session go through updateLocalList,
+  // so this only has to cover what was already queued before mount.
+  const [pendingEdits, setPendingEdits] = useState<Map<number, PendingEdit> | null>(null)
+
+  useEffect(() => {
+    chrome.runtime
+      .sendMessage({ action: "GET_PENDING_UPDATES" })
+      .then((res) => setPendingEdits(new Map(res?.updates ?? [])))
+      .catch(() => setPendingEdits(new Map()))
+  }, [])
+
   // Refetch only when dirty — the hook's own result is already in flight on a
   // cold load, so calling refetch() too would double the request.
   useEffect(() => {
     if (!userId) return
+    // Without the snapshot the list would populate un-overlaid and the queued
+    // edit would be missed until the next load
+    if (!pendingEdits) return
     if (list && !dirty) return
 
     if (dirty) {
       refetch()
         .then((res) => {
-          setList(res.data?.MediaListCollection?.lists?.[0]?.entries ?? [])
+          setList(
+            applyPendingEdits(
+              res.data?.MediaListCollection?.lists?.[0]?.entries ?? [],
+              pendingEdits
+            )
+          )
           clearDirty()
         })
         // refetch() rejects on a network error. Stays dirty so the next mount
         // retries; useQuery's own error already drives the StateMessage.
         .catch((err) => console.error("[MediaListTab] refetch failed:", err))
     } else if (data) {
-      setList(data.MediaListCollection?.lists?.[0]?.entries ?? [])
+      setList(
+        applyPendingEdits(data.MediaListCollection?.lists?.[0]?.entries ?? [], pendingEdits)
+      )
     }
-  }, [userId, dirty, data])
+  }, [userId, dirty, data, pendingEdits])
 
   const rawEntries = list ?? data?.MediaListCollection?.lists?.[0]?.entries ?? []
 

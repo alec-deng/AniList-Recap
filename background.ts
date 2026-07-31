@@ -411,6 +411,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ status: "queued" })
         break
 
+      // Lets a freshly-opened popup show edits the server hasn't accepted yet
+      case "GET_PENDING_UPDATES":
+        sendResponse({ updates: Array.from(pendingUpdates.entries()) })
+        break
+
       // Popup hit a dead token on a plain query, with nothing queued to flush
       case "SESSION_EXPIRED":
         clearInvalidSession()
