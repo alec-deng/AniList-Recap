@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 
 // Replaces the native scrollbar, hidden in popup.css — see CLAUDE.md for why.
 
@@ -13,6 +13,7 @@ const HIT_WIDTH = 30
 const TRACK_PADDING = 10
 const IDLE_HIDE_MS = 1100
 const EDGE_ZONE = 48
+const TAB_SCROLL_SETTLE_MS = 250
 const RESTING_OPACITY = 0.9
 
 type Metrics = { top: number; visible: boolean }
@@ -75,26 +76,41 @@ export const EdgeHandle: React.FC = () => {
   const [metrics, setMetrics] = useState<Metrics>(HIDDEN)
   const [active, setActive] = useState(false)
   const [revealed, setRevealed] = useState(false)
+  const [instantHide, setInstantHide] = useState(false)
   const dragRef = useRef<{ pointerY: number; scrollTop: number } | null>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nearEdgeRef = useRef(false)
+  const ignoreScrollRef = useRef(false)
+  const ignoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // In a ref so every handler can call it without re-subscribing each render
-  const refreshRef = useRef(() => {})
-  refreshRef.current = () => {
+  // Reads only refs, so effects subscribe once
+  const refresh = useCallback(() => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    setInstantHide(false)
     setRevealed(true)
     if (nearEdgeRef.current || dragRef.current) return
     hideTimerRef.current = setTimeout(() => setRevealed(false), IDLE_HIDE_MS)
-  }
+  }, [])
+
+  // Owned by refresh, not by any one listener
+  useEffect(() => () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+  }, [])
 
   useEffect(() => {
-    const sync = () => setMetrics(measureHandle())
+    // Same metrics reuse the object: the observer fires every frame of a grid animation
+    const sync = () =>
+      setMetrics((prev) => {
+        const next = measureHandle()
+        return prev.top === next.top && prev.visible === next.visible ? prev : next
+      })
     sync()
 
     const handleScroll = () => {
       sync()
-      refreshRef.current()
+      // A scroll the user didn't make is measure-only, same as a resize
+      if (ignoreScrollRef.current) return
+      refresh()
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true })
@@ -107,76 +123,81 @@ export const EdgeHandle: React.FC = () => {
       window.removeEventListener("scroll", handleScroll)
       observer.disconnect()
     }
-  }, [])
+  }, [refresh])
 
   useEffect(() => {
-    // The handle is a visual cue for the tab, so it hides when the tab changes
     const handleTabChange = () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      // Cut, don't fade: the reset jumps it to the top, and a fade shows the travel
+      setInstantHide(true)
       setRevealed(false)
+
+      // popup.tsx resets scroll on the new tab, which would re-reveal it. A window,
+      // not one event: a short tab clamps the offset first, then the reset scrolls.
+      ignoreScrollRef.current = true
+      if (ignoreTimerRef.current) clearTimeout(ignoreTimerRef.current)
+      ignoreTimerRef.current = setTimeout(() => {
+        ignoreScrollRef.current = false
+      }, TAB_SCROLL_SETTLE_MS)
     }
 
     window.addEventListener("tab-change", handleTabChange)
     return () => {
       window.removeEventListener("tab-change", handleTabChange)
+      if (ignoreTimerRef.current) clearTimeout(ignoreTimerRef.current)
     }
   }, [])
 
+  // On window, not the handle, so a drag that outruns the pointer isn't dropped
   useEffect(() => {
-    // Acted on at the boundary only, or every frame of movement restarts the timer
     const handlePointerMove = (e: PointerEvent) => {
+      const drag = dragRef.current
+      if (drag) {
+        const { viewport, content, travel } = geometry()
+        if (travel > 0) {
+          const moved = (e.clientY - drag.pointerY) / travel
+          window.scrollTo({ top: drag.scrollTop + moved * (content - viewport) })
+        }
+      }
+
+      // Acted on at the boundary only, or every frame of movement restarts the timer
       const near = e.clientX >= window.innerWidth - EDGE_ZONE
       if (near === nearEdgeRef.current) return
       nearEdgeRef.current = near
-      refreshRef.current()
+      refresh()
     }
 
     // relatedTarget is null only when the pointer leaves the window entirely
     const handlePointerOut = (e: PointerEvent) => {
       if (e.relatedTarget || !nearEdgeRef.current) return
       nearEdgeRef.current = false
-      refreshRef.current()
+      refresh()
     }
 
-    window.addEventListener("pointermove", handlePointerMove)
-    document.addEventListener("pointerout", handlePointerOut)
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove)
-      document.removeEventListener("pointerout", handlePointerOut)
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    }
-  }, [])
-
-  // On window, not the handle, so a drag that outruns the pointer isn't dropped
-  useEffect(() => {
-    const handleMove = (e: PointerEvent) => {
-      const drag = dragRef.current
-      if (!drag) return
-
-      const { viewport, content, travel } = geometry()
-      if (travel <= 0) return
-
-      const moved = (e.clientY - drag.pointerY) / travel
-      window.scrollTo({ top: drag.scrollTop + moved * (content - viewport) })
-    }
-
-    const handleUp = () => {
+    const handlePointerUp = () => {
       if (!dragRef.current) return
       dragRef.current = null
       document.body.style.userSelect = ""
       setActive(false)
-      refreshRef.current()
+      refresh()
     }
 
-    window.addEventListener("pointermove", handleMove)
-    window.addEventListener("pointerup", handleUp)
+    window.addEventListener("pointermove", handlePointerMove, { passive: true })
+    window.addEventListener("pointerup", handlePointerUp, { passive: true })
+    document.addEventListener("pointerout", handlePointerOut)
     return () => {
-      window.removeEventListener("pointermove", handleMove)
-      window.removeEventListener("pointerup", handleUp)
+      window.removeEventListener("pointermove", handlePointerMove)
+      window.removeEventListener("pointerup", handlePointerUp)
+      document.removeEventListener("pointerout", handlePointerOut)
       // Unmounting mid-drag would otherwise leave the page unselectable
       document.body.style.userSelect = ""
     }
-  }, [])
+  }, [refresh])
+
+  // No pointerleave arrives if it unmounts under a resting pointer
+  useEffect(() => {
+    if (!metrics.visible) setActive(false)
+  }, [metrics.visible])
 
   if (!metrics.visible) return null
 
@@ -187,12 +208,18 @@ export const EdgeHandle: React.FC = () => {
       style={{
         width: HIT_WIDTH,
         opacity: revealed ? (active ? 1 : RESTING_OPACITY) : 0,
-        transition: "opacity 220ms ease"
+        transition: instantHide ? "none" : "opacity 220ms ease"
       }}
     >
       <div
         className="absolute right-0 flex items-center justify-end pointer-events-auto cursor-grab active:cursor-grabbing"
-        style={{ top: metrics.top, height: HANDLE_HEIGHT, width: HIT_WIDTH }}
+        // Transform, not top: the offset changes every scroll, and this skips layout
+        style={{
+          top: 0,
+          transform: `translateY(${metrics.top}px)`,
+          height: HANDLE_HEIGHT,
+          width: HIT_WIDTH
+        }}
         onPointerEnter={() => setActive(true)}
         onPointerLeave={() => {
           if (!dragRef.current) setActive(false)
