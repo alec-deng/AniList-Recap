@@ -101,6 +101,15 @@ export const MediaCard: React.FC<Props> = ({
     onEditingChange?.(editing)
   }
 
+  // Escape closes the popup in both browsers and can't be prevented from here,
+  // so the input blurs mid-teardown and its handler would send what was typed.
+  // Chrome runs the keydown first, which sets this synchronously — a ref, since
+  // React hasn't flushed by then. Firefox never runs it, so the blur handlers
+  // also check document focus. Cleared when an edit opens: removing a focused
+  // input fires no blur to consume the flag.
+  const cancelProgressRef = useRef(false)
+  const cancelScoreRef = useRef(false)
+
   useEffect(() => {
     return () => {
       if (isHoveredRef.current) {
@@ -140,6 +149,16 @@ export const MediaCard: React.FC<Props> = ({
   }
 
   const handleScoreInputBlur = () => {
+    // No document focus means the popup is going away, not that the pointer
+    // moved to something else inside it
+    if (cancelScoreRef.current || !document.hasFocus()) {
+      cancelScoreRef.current = false
+      setTempScore(score.toString())
+      setIsEditingScore(false)
+      setEditing(false)
+      return
+    }
+
     const numValue = parseFloat(tempScore)
 
     if (isNaN(numValue)) {
@@ -168,6 +187,7 @@ export const MediaCard: React.FC<Props> = ({
     if (e.key === 'Enter') {
       handleScoreInputBlur()
     } else if (e.key === 'Escape') {
+      cancelScoreRef.current = true
       setTempScore(score.toString())
       setIsEditingScore(false)
       setEditing(false)
@@ -186,6 +206,15 @@ export const MediaCard: React.FC<Props> = ({
   }
 
   const handleProgressInputBlur = () => {
+    // See handleScoreInputBlur
+    if (cancelProgressRef.current || !document.hasFocus()) {
+      cancelProgressRef.current = false
+      setTempProgress(progress.toString())
+      setIsEditingProgress(false)
+      setEditing(false)
+      return
+    }
+
     const numValue = parseInt(tempProgress)
 
     // A fractional episode is malformed rather than out of range — no bound to clamp to
@@ -211,6 +240,7 @@ export const MediaCard: React.FC<Props> = ({
     if (e.key === 'Enter') {
       handleProgressInputBlur()
     } else if (e.key === 'Escape') {
+      cancelProgressRef.current = true
       setTempProgress(progress.toString())
       setIsEditingProgress(false)
       setEditing(false)
@@ -272,6 +302,7 @@ export const MediaCard: React.FC<Props> = ({
                 className="text-xs cursor-pointer hover:underline"
                 style={{ color: profileColor }}
                 onClick={() => {
+                  cancelProgressRef.current = false
                   setIsEditingProgress(true)
                   setTempProgress(progress.toString())
                   setEditing(true)
@@ -338,6 +369,7 @@ export const MediaCard: React.FC<Props> = ({
                 className="text-xs cursor-pointer hover:underline"
                 style={{ color: profileColor }}
                 onClick={() => {
+                  cancelScoreRef.current = false
                   setIsEditingScore(true)
                   setTempScore(score.toString())
                   setEditing(true)
