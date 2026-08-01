@@ -260,7 +260,7 @@ export const MediaCard: React.FC<Props> = ({
                 onBlur={handleProgressInputBlur}
                 onKeyDown={handleProgressInputKeyDown}
                 onFocus={(e) => e.currentTarget.select()}
-                className="bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-xs w-6 text-center border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,
                   borderBottomColor: `${profileColor}50` // 50% opacity
@@ -326,7 +326,7 @@ export const MediaCard: React.FC<Props> = ({
                 onBlur={handleScoreInputBlur}
                 onKeyDown={handleScoreInputKeyDown}
                 onFocus={(e) => e.currentTarget.select()}
-                className="bg-transparent text-xs w-5 text-right border-b border-white/50 focus:border-white focus:outline-none"
+                className="bg-transparent text-xs w-5 text-center border-b border-white/50 focus:border-white focus:outline-none"
                 style={{ 
                   color: profileColor,
                   borderBottomColor: `${profileColor}50` // 50% opacity
