@@ -27,7 +27,7 @@ const TAB_DEFS = [
 
 function PopupContent() {
   const [selectedKey, setSelectedKey] = useState("anime")
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const avatar = user?.data?.Viewer?.avatar?.medium
   const userName = user?.data?.Viewer?.name
   const { profileColor, tabVisibility, gridColumns } = useSettings()
@@ -57,6 +57,13 @@ function PopupContent() {
       resetData()
     }
   }, [user])
+
+  // CHECK_AUTH is a round trip to a usually-cold worker, so painting LoginPage
+  // first would flash it on every open. Blank at the logged-in width, which is
+  // what almost every open resolves to.
+  if (authLoading) {
+    return <div className={`${GRID_WIDTH[gridColumns]} min-h-[400px] bg-white`} />
+  }
 
   if (!user) {
     return <LoginPage />

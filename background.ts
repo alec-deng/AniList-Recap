@@ -16,6 +16,11 @@ class Storage {
     await chrome.storage.local.set(obj)
   }
 
+  // Several keys in one event — see clearInvalidSession for why that matters
+  static async setMany(items: Record<string, unknown>): Promise<void> {
+    await chrome.storage.local.set(items)
+  }
+
   static async remove(key: string | string[]): Promise<void> {
     await chrome.storage.local.remove(key)
   }
@@ -375,10 +380,12 @@ class Auth {
 
     const user = await new AniList(accessToken).user()
 
-    await Promise.all([
-      Storage.set(Storage.DATA.ACCESS_TOKEN, accessToken),
-      Storage.set(Storage.DATA.USER, user),
-    ])
+    // One write, not two: each fires its own onChanged, and a CHECK_AUTH landing
+    // between them reads a token with no user and bounces back to LoginPage
+    await Storage.setMany({
+      [Storage.DATA.ACCESS_TOKEN]: accessToken,
+      [Storage.DATA.USER]: user
+    })
 
     // The dead-token path re-queued these and then cleared the session. Not
     // awaited — the popup is waiting on this response to leave LoginPage.
@@ -389,10 +396,8 @@ class Auth {
 
   static async logout() {
     await flushAllPendingUpdates()
-    await Promise.all([
-      Storage.remove(Storage.DATA.ACCESS_TOKEN),
-      Storage.remove(Storage.DATA.USER),
-    ])
+    // One removal, for the same reason as the paired write in login()
+    await Storage.remove([Storage.DATA.ACCESS_TOKEN, Storage.DATA.USER])
   }
 }
 
@@ -476,6 +481,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           .then(([token, user]) => sendResponse({ token, user }))
           .catch((error) => sendResponse({ error: error.message }))
         break
+
+      // The listener returns true unconditionally, so an unanswered message
+      // leaves the sender's promise pending until the port closes
+      default:
+        sendResponse({ error: `Unknown action: ${message.action}` })
     }
   }
   

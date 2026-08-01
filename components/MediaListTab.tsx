@@ -114,7 +114,11 @@ const queueUpdate = (payload: {
   progress?: number
   score?: number
   status?: string
-}) => chrome.runtime.sendMessage({ action: "QUEUE_UPDATE", payload })
+}) =>
+  chrome.runtime
+    .sendMessage({ action: "QUEUE_UPDATE", payload })
+    // The card already shows the edit — a dropped message would strand it there
+    .catch((err) => console.error("[MediaListTab] failed to queue update:", err))
 
 export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) => {
   const {
@@ -182,6 +186,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   const wantsEndRef = useRef(false)
   // Fades in flight, tracked synchronously alongside the removingIds state
   const removingCountRef = useRef(0)
+  const removingIdsRef = useRef<Set<number>>(new Set())
 
   const activeIdRef = useRef<number | null>(null)
   activeIdRef.current = activeId
@@ -359,8 +364,10 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   const startRemoval = (entryId: number) => {
     setRemovingIds((cur) => new Set(cur).add(entryId))
     removingCountRef.current += 1
+    removingIdsRef.current.add(entryId)
 
     schedule(() => {
+      removingIdsRef.current.delete(entryId)
       setList((prev) => prev?.filter((item) => item.id !== entryId) ?? prev)
       setRemovingIds((cur) => {
         const next = new Set(cur)
@@ -481,12 +488,19 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
   useEffect(() => {
     return () => {
       clearScheduled()
-      const removalId = pendingRemovalRef.current
-      if (removalId !== null) {
+
+      // clearScheduled cancels the fade timers, so a card still mid-fade would
+      // otherwise stay in the list with its edit already sent
+      const dropped = new Set(removingIdsRef.current)
+      removingIdsRef.current.clear()
+      if (pendingRemovalRef.current !== null) {
+        dropped.add(pendingRemovalRef.current)
         pendingRemovalRef.current = null
-        setList((prev) => prev?.filter((item) => item.id !== removalId) ?? prev)
-        markStatsDirty()
       }
+
+      if (dropped.size === 0) return
+      setList((prev) => prev?.filter((item) => !dropped.has(item.id)) ?? prev)
+      markStatsDirty()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

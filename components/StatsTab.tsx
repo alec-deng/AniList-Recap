@@ -50,8 +50,8 @@ const COMPLETED_MANGA_QUERY = gql`
 `
 
 // Flatten all entries from all lists (CURRENT, COMPLETED, etc.), keeping only scored ones
-const scoredEntries = (res: any) =>
-  (res.data?.MediaListCollection?.lists ?? [])
+const scoredEntries = (data: any) =>
+  (data?.MediaListCollection?.lists ?? [])
     .flatMap((list: any) => list.entries ?? [])
     .filter((entry: any) => entry.score > 0)
 
@@ -138,39 +138,51 @@ export const StatsTab: React.FC = () => {
 
   const { userId, loading: userIdLoading } = useUserId()
 
-  const { loading: animeLoading, error: animeError, refetch: refetchAnime } = useQuery(COMPLETED_ANIME_QUERY, {
+  const { data: animeData, loading: animeLoading, error: animeError, refetch: refetchAnime } = useQuery(COMPLETED_ANIME_QUERY, {
     variables: { userId },
     skip: !userId
   })
 
-  const { loading: mangaLoading, error: mangaError, refetch: refetchManga } = useQuery(COMPLETED_MANGA_QUERY, {
+  const { data: mangaData, loading: mangaLoading, error: mangaError, refetch: refetchManga } = useQuery(COMPLETED_MANGA_QUERY, {
     variables: { userId },
     skip: !userId
   })
 
+  // Refetch only when dirty — the hook's own result is already in flight on a
+  // cold load, so calling refetch() too would repeat the request.
   useEffect(() => {
     if (!userId) return
     if (statsList && !statsDirty) return
-    refetchAnime()
-      .then(res => {
-        setStatsList(scoredEntries(res))
-        clearStatsDirty()
-      })
-      // refetch() rejects on a network error. Stays dirty so the next mount
-      // retries; useQuery's own error already drives the StateMessage.
-      .catch(err => console.error("[StatsTab] anime refetch failed:", err))
-  }, [userId, statsDirty])
+
+    if (statsDirty) {
+      refetchAnime()
+        .then(res => {
+          setStatsList(scoredEntries(res.data))
+          clearStatsDirty()
+        })
+        // refetch() rejects on a network error. Stays dirty so the next mount
+        // retries; useQuery's own error already drives the StateMessage.
+        .catch(err => console.error("[StatsTab] anime refetch failed:", err))
+    } else if (animeData) {
+      setStatsList(scoredEntries(animeData))
+    }
+  }, [userId, statsDirty, animeData])
 
   useEffect(() => {
     if (!userId) return
     if (mangaStatsList && !mangaStatsDirty) return
-    refetchManga()
-      .then(res => {
-        setMangaStatsList(scoredEntries(res))
-        clearMangaStatsDirty()
-      })
-      .catch(err => console.error("[StatsTab] manga refetch failed:", err))
-  }, [userId, mangaStatsDirty])
+
+    if (mangaStatsDirty) {
+      refetchManga()
+        .then(res => {
+          setMangaStatsList(scoredEntries(res.data))
+          clearMangaStatsDirty()
+        })
+        .catch(err => console.error("[StatsTab] manga refetch failed:", err))
+    } else if (mangaData) {
+      setMangaStatsList(scoredEntries(mangaData))
+    }
+  }, [userId, mangaStatsDirty, mangaData])
 
   const animeEntries = statsList ?? []
   const mangaEntries = mangaStatsList ?? []
@@ -265,7 +277,8 @@ export const StatsTab: React.FC = () => {
               onValueChange={(values) => {
                 const i = values[0]
                 setSliderValue(i)
-                setYear(i === 0 ? null : years[i - 1])
+                // ?? null: a refetch can shorten years under a held position
+                setYear(i === 0 ? null : years[i - 1] ?? null)
               }}
               onPointerDown={() => setIsSliderActive(true)}
               onPointerUp={() => setIsSliderActive(false)}

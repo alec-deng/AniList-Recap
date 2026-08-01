@@ -4,14 +4,6 @@ import { useAuth } from "../hooks/useAuth"
 export const LoginPage: React.FC = () => {
   const { login, loading } = useAuth()
 
-  const handleLogin = async () => {
-    try {
-      await login()
-    } catch (error) {
-      console.error('Login failed:', error)
-    }
-  }
-
   return (
     <div className="w-[400px] min-h-[400px] bg-white flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-5">
@@ -32,7 +24,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             <button
-              onClick={handleLogin}
+              onClick={login}
               disabled={loading}
               className={`
                 w-full py-3 px-4 rounded-lg font-medium text-white-100 transition-all duration-200
