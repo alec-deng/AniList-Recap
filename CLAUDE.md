@@ -22,7 +22,7 @@ AniPortable: MV3 popup extension for tracking AniList anime/manga lists. One cod
 
 Generated from `package.json`'s `"manifest"` key — edit there, never `.plasmo/` or `build/`. **The version lives in two places**: top-level `version` and `manifest.version`. Bump both; the manifest key wins.
 
-- Permissions: `storage`, `identity`, `host_permissions: ["https://graphql.anilist.co/"]` (exact path, no wildcard).
+- Permissions: `storage`, `identity`, `alarms`, `host_permissions: ["https://graphql.anilist.co/"]` (exact path, no wildcard). **`alarms` is load-bearing, not optional** — `persistPendingUpdates()` calls `chrome.alarms` on every queue change, so removing it makes that throw and `QUEUE_UPDATE` never answer, silently stranding every edit in the popup.
 - Plasmo rewrites per target — don't hand-maintain variants: `background.service_worker` → `background.scripts` on Firefox; `browser_specific_settings.gecko` kept on Firefox, stripped on Chrome. `gecko_android` is dropped (verified, don't retry) — expect one harmless `KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION` from `web-ext lint`.
 - After any manifest change, check the generated `build/<target>/manifest.json`.
 
