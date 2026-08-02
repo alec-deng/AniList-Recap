@@ -15,8 +15,15 @@ import { SquareArrowOutUpRight  } from "lucide-react"
 import "./styles/popup.css"
 
 // Paired to hold the card at ~145x194 — a taller card costs a row of the 600px
-// viewport. Literal names: Tailwind's JIT can't see interpolated ones.
+// viewport. Fixed, so the card is the same size whatever the window ended up as.
+// Literal names: Tailwind's JIT can't see interpolated ones.
 const GRID_WIDTH = { 3: "w-[516px]", 4: "w-[678px]" } as const
+
+// The login page asks for the compact width whatever the grid setting is: one
+// small card centred in a 678px window reads as an empty popup. w-full on top,
+// because the window may already be wider — logged out of a 4-column session —
+// and it can't shrink, so filling it beats leaving a strip. Matches GRID_WIDTH[3].
+const LOGIN_WIDTH = "w-full min-w-[516px]"
 
 const TAB_DEFS = [
   { key: "anime", label: "Anime List", Component: AnimeTab },
@@ -66,7 +73,7 @@ function PopupContent() {
   }
 
   if (!user) {
-    return <LoginPage />
+    return <LoginPage width={LOGIN_WIDTH} />
   }
 
   const selectedIndex = visibleTabs.findIndex(({ key }) => key === selectedKey)

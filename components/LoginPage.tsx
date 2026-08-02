@@ -1,11 +1,16 @@
 import React from "react"
 import { useAuth } from "../hooks/useAuth"
 
-export const LoginPage: React.FC = () => {
+type Props = {
+  // The compact grid width, not this page's own — see LOGIN_WIDTH in popup.tsx
+  width: string
+}
+
+export const LoginPage: React.FC<Props> = ({ width }) => {
   const { login, loading } = useAuth()
 
   return (
-    <div className="w-[400px] min-h-[400px] bg-white flex items-center justify-center p-4">
+    <div className={`${width} min-h-[400px] bg-white flex items-center justify-center p-4`}>
       <div className="max-w-md w-full space-y-5">
         {/* Header */}
         <div className="text-center">

@@ -32,7 +32,12 @@ interface SettingsContextType {
   tabVisibility: 'both' | 'anime' | 'manga'
   showAnimeStats: boolean
   showMangaStats: boolean
+  // What the popup is actually laid out as this session — use this for anything
+  // visual. Only ever grows; see widestColumnsRef in the provider.
   gridColumns: GridColumns
+  // What the user picked and what is stored. Differs from gridColumns after
+  // narrowing, until the popup is reopened. For the Settings control only.
+  gridColumnsSetting: GridColumns
   setProfileColor: (color: string) => void
   setTitleLanguage: (language: string) => void
   setDisplayAdultContent: (display: boolean) => void
@@ -75,6 +80,14 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [showAnimeStats, setShowAnimeStatsState] = useState<boolean>(true)
   const [showMangaStats, setShowMangaStatsState] = useState<boolean>(true)
   const [gridColumns, setGridColumnsState] = useState<GridColumns>(3)
+
+  // Chrome grows the popup window to fit the document but never shrinks it, so
+  // narrowing the grid can only take effect on the next open — laying it out
+  // narrow now would leave bare background beside it. The layout follows the
+  // widest value seen this session; Settings says the rest is pending. A ref
+  // read during render, so the widening lands in the render that caused it.
+  const widestColumnsRef = useRef<GridColumns>(gridColumns)
+  if (gridColumns > widestColumnsRef.current) widestColumnsRef.current = gridColumns
 
   const { userId, loading: userIdLoading } = useUserId()
 
@@ -223,7 +236,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       tabVisibility,
       showAnimeStats,
       showMangaStats,
-      gridColumns,
+      gridColumns: widestColumnsRef.current,
+      gridColumnsSetting: gridColumns,
       setProfileColor,
       setTitleLanguage,
       setDisplayAdultContent,

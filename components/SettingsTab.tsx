@@ -102,6 +102,7 @@ export const SettingsTab: React.FC = () => {
     showAnimeStats,
     showMangaStats,
     gridColumns,
+    gridColumnsSetting,
     setProfileColor,
     setTitleLanguage,
     setDisplayAdultContent,
@@ -289,11 +290,17 @@ export const SettingsTab: React.FC = () => {
             { value: "3", name: "3 Cards (Compact)" },
             { value: "4", name: "4 Cards (Wide)" }
           ]}
-          value={String(gridColumns)}
+          value={String(gridColumnsSetting)}
           onChange={handleGridColumnsChange}
           profileColor={profileColor}
           className="w-full"
         />
+        {/* The popup window can't narrow itself, so a compact choice waits */}
+        {gridColumnsSetting !== gridColumns && (
+          <p className="text-xs text-gray/60 mt-2">
+            Applies the next time you open the popup.
+          </p>
+        )}
       </Section>
 
       {/* Kept above Show in Stats: changing it resets both stats toggles */}
