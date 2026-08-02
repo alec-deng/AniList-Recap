@@ -130,7 +130,20 @@ function Popup() {
   useEffect(() => {
     // Connect to background script to detect when popup closes
     const port = chrome.runtime.connect({ name: 'popup' })
+
+    // The port's disconnect is the last thing to fire, and by then the worker
+    // can be torn down with the request still in flight. Losing focus means the
+    // popup is going away, so the flush starts while this page is still alive.
+    // A mid-edit input has already discarded its value by now — see MediaCard.
+    const flushNow = () => {
+      chrome.runtime.sendMessage({ action: "FLUSH_NOW" }).catch(() => {})
+    }
+    window.addEventListener('blur', flushNow)
+    window.addEventListener('pagehide', flushNow)
+
     return () => {
+      window.removeEventListener('blur', flushNow)
+      window.removeEventListener('pagehide', flushNow)
       port.disconnect()
     }
   }, [])

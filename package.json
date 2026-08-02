@@ -1,6 +1,6 @@
 {
   "name": "aniportable",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "private": true,
   "scripts": {
     "build:all": "node scripts/build-all.mjs"
@@ -36,11 +36,12 @@
   "manifest": {
     "manifest_version": 3,
     "name": "AniPortable",
-    "version": "1.6.4",
+    "version": "1.6.5",
     "description": "Track and update your AniList anime & manga without leaving your current tab!",
     "permissions": [
       "storage",
-      "identity"
+      "identity",
+      "alarms"
     ],
     "host_permissions": [
       "https://graphql.anilist.co/"

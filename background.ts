@@ -172,7 +172,20 @@ type QueuedUpdate = PendingUpdate & { queuedAt: number }
 const MAX_QUEUE_AGE_MS = 24 * 60 * 60 * 1000
 const MAX_FLUSH_ATTEMPTS = 3
 
+// Batches a burst of clicks into one mutation. The popup routinely closes
+// inside this window, so the close path below is what actually sends most
+// edits — the timer only covers a popup left open.
+const FLUSH_DEBOUNCE_MS = 5000
+
+// Closing the popup can tear the worker down with the flush's request still in
+// flight, and nothing else retried until the next worker start — which is why a
+// queued edit used to sit until the popup was reopened. An alarm outlives that.
+const FLUSH_ALARM = "flush-pending-updates"
+const FLUSH_RETRY_MINUTES = 0.5 // 30s, the floor Chrome clamps an alarm to
+const MAX_FLUSH_RETRY_MINUTES = 30
+
 let globalDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let flushFailures = 0
 const pendingUpdates = new Map<number, QueuedUpdate>()
 // The batch being sent right now. pendingUpdates is cleared before the await, so
 // without this a popup opening mid-flush reads an empty queue and paints the
@@ -188,13 +201,24 @@ function mergedPendingUpdates(): Map<number, QueuedUpdate> {
   return merged
 }
 
+// Backs off while flushes keep failing: offline, a fixed retry would wake the
+// worker every 30s until the queue ages out a day later.
+function armFlushAlarm(): void {
+  const minutes = Math.min(FLUSH_RETRY_MINUTES * 2 ** flushFailures, MAX_FLUSH_RETRY_MINUTES)
+  chrome.alarms.create(FLUSH_ALARM, { delayInMinutes: minutes })
+}
+
 async function persistPendingUpdates(): Promise<void> {
   if (pendingUpdates.size === 0) {
     // An empty queue must clear the mirror, or a restart replays a synced batch
     await Storage.remove(Storage.DATA.PENDING_UPDATES)
+    chrome.alarms.clear(FLUSH_ALARM)
     return
   }
   await Storage.set(Storage.DATA.PENDING_UPDATES, Array.from(pendingUpdates.entries()))
+  // Anything still queued gets a wake-up of its own, so delivery never depends
+  // on the popup being opened again
+  armFlushAlarm()
 }
 
 async function restorePendingUpdates(): Promise<void> {
@@ -275,6 +299,7 @@ async function flushAllPendingUpdates() {
   try {
     const result = await new AniList(token).saveBulkMediaListEntries(updatesToFlush)
     reportSynced(result?.data)
+    flushFailures = 0
     for (const id of updatesToFlush.keys()) failedAttempts.delete(id)
     // Not an unconditional remove — an edit queued mid-flight is already in
     // pendingUpdates and would lose its stored copy
@@ -283,6 +308,7 @@ async function flushAllPendingUpdates() {
   } catch (error) {
     console.error("[Background] Failed to flush updates, will retry later:", error)
 
+    flushFailures += 1
     const landed = reportSynced(error instanceof AniListRequestError ? error.data : null)
 
     // A dead token shares the 400 of a rejected edit, so it must be excluded
@@ -432,9 +458,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         globalDebounceTimer = setTimeout(() => {
           flushAllPendingUpdates()
-        }, 5000)
+        }, FLUSH_DEBOUNCE_MS)
 
         sendResponse({ status: "queued" })
+        break
+
+      // The popup is closing: nothing queued may wait out the debounce. Not
+      // awaited — the sender is on its way out and needs no answer.
+      case "FLUSH_NOW":
+        flushAllPendingUpdates()
+        sendResponse({ status: "flushing" })
         break
 
       // Lets a freshly-opened popup show edits the server hasn't accepted yet
@@ -499,6 +532,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
       broadcastAuthChange()
     }
   }
+})
+
+// Retry for a flush that never landed. A cold start has already replayed the
+// queue from storage by now, so this only has work when the worker survived.
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === FLUSH_ALARM) flushAllPendingUpdates()
 })
 
 // Flush all pending updates when popup closes
