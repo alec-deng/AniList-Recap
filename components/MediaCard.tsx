@@ -92,6 +92,11 @@ export const MediaCard: React.FC<Props> = ({
     isHoveredRef.current = false
     onHoverChange?.(false)
   }
+  // Enter alone can never arrive: a card that appears under a resting pointer
+  // gets no mouseover, and moving *within* it produces one React discards.
+  const handleMouseMove = () => {
+    if (!isHoveredRef.current) handleMouseEnter()
+  }
 
   // An open input is an interaction of its own: the typed value commits on
   // blur, which is usually after the pointer has left the card.
@@ -100,13 +105,10 @@ export const MediaCard: React.FC<Props> = ({
     isEditingRef.current = editing
     onEditingChange?.(editing)
   }
-
-  // Escape closes the popup in both browsers and can't be prevented from here,
-  // so the input blurs mid-teardown and its handler would send what was typed.
+  
   // Chrome runs the keydown first, which sets this synchronously — a ref, since
   // React hasn't flushed by then. Firefox never runs it, so the blur handlers
-  // also check document focus. Cleared when an edit opens: removing a focused
-  // input fires no blur to consume the flag.
+  // also check document focus.
   const cancelProgressRef = useRef(false)
   const cancelScoreRef = useRef(false)
 
@@ -119,18 +121,15 @@ export const MediaCard: React.FC<Props> = ({
         onEditingChange?.(false)
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // The list can be replaced under a mounted card — a score format change
   // rescales every score. Skipped mid-edit so it can't clobber what's typed.
   useEffect(() => {
     if (!isEditingScore) setScore(anime.score)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anime.score])
   useEffect(() => {
     if (!isEditingProgress) setProgress(anime.progress)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anime.progress])
 
   if (anime.isAdult && !displayAdultContent) {
@@ -255,6 +254,7 @@ export const MediaCard: React.FC<Props> = ({
     <div
       className="relative w-full aspect-[3/4] overflow-hidden rounded-lg shadow-md transition-all duration-200 group"
       onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
         backgroundImage: `url(${anime.cover})`,
@@ -264,7 +264,7 @@ export const MediaCard: React.FC<Props> = ({
       }}
     >
       {showCompletionButton && (
-        <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto group-hover:pointer-events-auto transition-opacity duration-150">
+        <div className="absolute top-2 left-2 right-2 opacity-0 pointer-events-none group-hover:opacity-100 group-[:has(:focus-visible)]:opacity-100 group-[:has(:focus-visible)]:pointer-events-auto group-hover:pointer-events-auto transition-opacity duration-150">
           <button
             className="w-full text-white px-2 py-1 rounded text-xs font-medium shadow-lg hover:brightness-105"
             style={{ backgroundColor: profileColor }}
@@ -314,7 +314,7 @@ export const MediaCard: React.FC<Props> = ({
             <span className="text-xs" style={{ color: profileColor }}>
               {anime.totalEpisodes && `/${anime.totalEpisodes}`}
             </span>
-            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
+            <div className="flex flex-col -space-y-0.5 ml-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-[:has(:focus-visible)]:opacity-100 group-[:has(:focus-visible)]:pointer-events-auto transition-opacity duration-150">
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleProgressChange(progress + 1)}
@@ -333,7 +333,7 @@ export const MediaCard: React.FC<Props> = ({
           </div>
           
           <div className="flex items-center">
-            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity duration-150">
+            <div className="flex flex-col -space-y-0.5 mr-1 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-[:has(:focus-visible)]:opacity-100 group-[:has(:focus-visible)]:pointer-events-auto transition-opacity duration-150">
               <button
                 className="w-3.5 h-3.5 flex items-center justify-center leading-none rounded-sm hover:bg-white/20 transition-colors disabled:opacity-30 disabled:hover:bg-transparent outline-offset-0"
                 onClick={() => handleScoreChange(score + 1)}
