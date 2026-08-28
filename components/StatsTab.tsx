@@ -231,10 +231,7 @@ export const StatsTab: React.FC = () => {
     )
   }
 
-  // Only a rescale counts as loading — see MediaListTab. Stats dirtied by a completed
-  // entry are one off the count, so they stay up and correct themselves in place.
-  if (userIdLoading || animeLoading || mangaLoading || statsRescaled || mangaStatsRescaled)
-    return <StateMessage icon={Loader2} spin message="Loading your stats..." />
+  // Ahead of the loading gate, for the reason given in MediaListTab
   if (animeError || mangaError)
     return (
       <StateMessage
@@ -243,6 +240,10 @@ export const StatsTab: React.FC = () => {
         message={getErrorMessage(animeError || mangaError, "Error loading stats.")}
       />
     )
+  // Only a rescale counts as loading — see MediaListTab. Stats dirtied by a completed
+  // entry are one off the count, so they stay up and correct themselves in place.
+  if (userIdLoading || animeLoading || mangaLoading || statsRescaled || mangaStatsRescaled)
+    return <StateMessage icon={Loader2} spin message="Loading your stats..." />
 
   return (
     // Margin, not stretch — see SettingsTab

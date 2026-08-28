@@ -507,11 +507,8 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // A rescale counts as loading: useQuery's own flag stays false through a refetch,
-  // and every cached score is on the old scale until it lands. A list dirtied for any
-  // other reason stays on screen and corrects itself in place.
-  if (userIdLoading || loading || rescaled)
-    return <StateMessage icon={Loader2} spin message={config.loadingMessage} />
+  // Before the loading gate below: a failed refetch leaves the list dirty, so a rescale
+  // that never lands would spin forever instead of saying why.
   if (error)
     return (
       <StateMessage
@@ -520,6 +517,11 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
         message={getErrorMessage(error, config.errorMessage)}
       />
     )
+  // A rescale counts as loading: useQuery's own flag stays false through a refetch,
+  // and every cached score is on the old scale until it lands. A list dirtied for any
+  // other reason stays on screen and corrects itself in place.
+  if (userIdLoading || loading || rescaled)
+    return <StateMessage icon={Loader2} spin message={config.loadingMessage} />
 
   // Predicts updatedAt so "Last Updated" isn't stale all session; the
   // background reconciles it with the server's real value after the flush.
