@@ -123,10 +123,12 @@ export const StatsTab: React.FC = () => {
   const {
     statsList,
     statsDirty,
+    statsRescaled,
     setStatsList,
     clearStatsDirty,
     mangaStatsList,
     mangaStatsDirty,
+    mangaStatsRescaled,
     setMangaStatsList,
     clearMangaStatsDirty
   } = useAniListData()
@@ -229,7 +231,9 @@ export const StatsTab: React.FC = () => {
     )
   }
 
-  if (userIdLoading || animeLoading || mangaLoading)
+  // Only a rescale counts as loading — see MediaListTab. Stats dirtied by a completed
+  // entry are one off the count, so they stay up and correct themselves in place.
+  if (userIdLoading || animeLoading || mangaLoading || statsRescaled || mangaStatsRescaled)
     return <StateMessage icon={Loader2} spin message="Loading your stats..." />
   if (animeError || mangaError)
     return (

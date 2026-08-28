@@ -11,6 +11,11 @@ type AniListDataContextType = {
   statsDirty: boolean
   mangaDirty: boolean
   mangaStatsDirty: boolean
+  // The subset of dirty whose *meaning* changed, not just its contents — see markAllRescaled
+  animeRescaled: boolean
+  statsRescaled: boolean
+  mangaRescaled: boolean
+  mangaStatsRescaled: boolean
   setAnimeList: ListSetter
   setStatsList: ListSetter
   setMangaList: ListSetter
@@ -19,6 +24,7 @@ type AniListDataContextType = {
   markStatsDirty: () => void
   markMangaDirty: () => void
   markMangaStatsDirty: () => void
+  markAllRescaled: () => void
   clearAnimeDirty: () => void
   clearStatsDirty: () => void
   clearMangaDirty: () => void
@@ -37,6 +43,10 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [statsDirty, setStatsDirty] = useState(false)
   const [mangaDirty, setMangaDirty] = useState(false)
   const [mangaStatsDirty, setMangaStatsDirty] = useState(false)
+  const [animeRescaled, setAnimeRescaled] = useState(false)
+  const [statsRescaled, setStatsRescaled] = useState(false)
+  const [mangaRescaled, setMangaRescaled] = useState(false)
+  const [mangaStatsRescaled, setMangaStatsRescaled] = useState(false)
 
   // The flag alone drives the refetch. Blanking the list too made the refetch
   // window render as an empty list — "0 / 0.00" in Stats reads as a real answer.
@@ -44,6 +54,18 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const markStatsDirty = useCallback(() => setStatsDirty(true), [])
   const markMangaDirty = useCallback(() => setMangaDirty(true), [])
   const markMangaStatsDirty = useCallback(() => setMangaStatsDirty(true), [])
+
+  // Separates the two reasons a list goes stale. Completing an entry leaves the cached copy
+  // a hair out of date — one off the count — so it stays on screen and corrects itself. A
+  // score format change rescales every score, so the cached copy is not slightly old but
+  // wrong on its face: an 8 rendered under POINT_100. Only that gets a loading state.
+  // All four at once, because that format change is the only thing that rescales anything.
+  const markAllRescaled = useCallback(() => {
+    setAnimeRescaled(true)
+    setStatsRescaled(true)
+    setMangaRescaled(true)
+    setMangaStatsRescaled(true)
+  }, [])
   // Corrects the optimistic updatedAt the list tab writes, with the server's real stamp
   useEffect(() => {
     const handleMessage = (message: any) => {
@@ -66,10 +88,24 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => chrome.runtime.onMessage.removeListener(handleMessage)
   }, [])
 
-  const clearAnimeDirty = useCallback(() => setAnimeDirty(false), [])
-  const clearStatsDirty = useCallback(() => setStatsDirty(false), [])
-  const clearMangaDirty = useCallback(() => setMangaDirty(false), [])
-  const clearMangaStatsDirty = useCallback(() => setMangaStatsDirty(false), [])
+  // Each clears its own rescale flag alongside the dirty one — the refetch it marks the end
+  // of is exactly the one that brought back the rescaled values.
+  const clearAnimeDirty = useCallback(() => {
+    setAnimeDirty(false)
+    setAnimeRescaled(false)
+  }, [])
+  const clearStatsDirty = useCallback(() => {
+    setStatsDirty(false)
+    setStatsRescaled(false)
+  }, [])
+  const clearMangaDirty = useCallback(() => {
+    setMangaDirty(false)
+    setMangaRescaled(false)
+  }, [])
+  const clearMangaStatsDirty = useCallback(() => {
+    setMangaStatsDirty(false)
+    setMangaStatsRescaled(false)
+  }, [])
 
   // Back to the state a freshly opened popup starts in.
   const resetData = useCallback(() => {
@@ -81,6 +117,10 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setStatsDirty(false)
     setMangaDirty(false)
     setMangaStatsDirty(false)
+    setAnimeRescaled(false)
+    setStatsRescaled(false)
+    setMangaRescaled(false)
+    setMangaStatsRescaled(false)
   }, [])
 
   return (
@@ -94,6 +134,10 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         statsDirty,
         mangaDirty,
         mangaStatsDirty,
+        animeRescaled,
+        statsRescaled,
+        mangaRescaled,
+        mangaStatsRescaled,
         setAnimeList,
         setStatsList,
         setMangaList,
@@ -102,6 +146,7 @@ export const AniListDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         markStatsDirty,
         markMangaDirty,
         markMangaStatsDirty,
+        markAllRescaled,
         clearAnimeDirty,
         clearStatsDirty,
         clearMangaDirty,

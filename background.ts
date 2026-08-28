@@ -184,9 +184,22 @@ const FLUSH_ALARM = "flush-pending-updates"
 const FLUSH_RETRY_MINUTES = 0.5 // 30s, the floor Chrome clamps an alarm to
 const MAX_FLUSH_RETRY_MINUTES = 30
 
+// The stored queue, stamped with the account that made the edits. Entry ids are
+// account-scoped, so this is what stops one account's queue being replayed under another's
+// token — see the ownership check in flushAllPendingUpdates.
+type StoredQueue = { userId?: number; updates: [number, Partial<QueuedUpdate>][] }
+
+const currentUserId = async (): Promise<number | undefined> => {
+  const user = await Storage.get<{ data?: { Viewer?: { id?: number } } }>(Storage.DATA.USER)
+  return user?.data?.Viewer?.id
+}
+
 let globalDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let flushFailures = 0
 const pendingUpdates = new Map<number, QueuedUpdate>()
+// Whose edits are sitting in pendingUpdates. Held in memory as well as in storage, because a
+// cold worker restores the queue before anything has told it who is signed in.
+let queueUserId: number | undefined
 // The batch being sent right now. pendingUpdates is cleared before the await, so
 // without this a popup opening mid-flush reads an empty queue and paints the
 // server's pre-edit value. Not persisted — the storage mirror deliberately keeps
@@ -215,17 +228,33 @@ async function persistPendingUpdates(): Promise<void> {
     chrome.alarms.clear(FLUSH_ALARM)
     return
   }
-  await Storage.set(Storage.DATA.PENDING_UPDATES, Array.from(pendingUpdates.entries()))
+  const stored: StoredQueue = { userId: queueUserId, updates: Array.from(pendingUpdates.entries()) }
+  await Storage.set(Storage.DATA.PENDING_UPDATES, stored)
   // Anything still queued gets a wake-up of its own, so delivery never depends
   // on the popup being opened again
   armFlushAlarm()
 }
 
-async function restorePendingUpdates(): Promise<void> {
-  const saved = await Storage.get<[number, Partial<QueuedUpdate>][]>(Storage.DATA.PENDING_UPDATES)
-  if (!saved || saved.length === 0) return
+// Everything the queue owns. Used when it turns out to belong to an account that is no
+// longer the one signed in — the empty branch above clears storage and the alarm.
+async function discardPendingUpdates(): Promise<void> {
+  pendingUpdates.clear()
+  failedAttempts.clear()
+  queueUserId = undefined
+  await persistPendingUpdates()
+}
 
-  for (const [id, data] of saved) {
+async function restorePendingUpdates(): Promise<void> {
+  const saved = await Storage.get<StoredQueue>(Storage.DATA.PENDING_UPDATES)
+  if (!saved) return
+  if (!saved.updates?.length) {
+    // Unreadable or empty — an old shape from before the stamp, most likely
+    await Storage.remove(Storage.DATA.PENDING_UPDATES)
+    return
+  }
+
+  queueUserId = saved.userId
+  for (const [id, data] of saved.updates) {
     // Pre-queuedAt entries get a fresh window instead of reading as infinitely old
     pendingUpdates.set(id, { ...data, queuedAt: data.queuedAt ?? Date.now() })
   }
@@ -290,7 +319,19 @@ async function flushAllPendingUpdates() {
   }
 
   const token = await Storage.get<string>(Storage.DATA.ACCESS_TOKEN)
+  // Logged out: the queue stays put rather than being dropped, and flushes once the account
+  // that made these edits logs back in.
   if (!token) return
+
+  // A queue left behind by a different account can only be rejected here — its entry ids
+  // belong to that account's list — so it would burn an attempt per entry until it is
+  // dropped. Discard it up front instead. An unstamped queue predates the stamp and is
+  // treated the same way.
+  if (queueUserId !== (await currentUserId())) {
+    console.warn("[Background] Discarding a queue that belongs to a different account")
+    await discardPendingUpdates()
+    return
+  }
 
   const updatesToFlush = new Map(pendingUpdates)
   inFlightUpdates = updatesToFlush
@@ -442,6 +483,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case "QUEUE_UPDATE":
         const { entryId, progress, score, status } = message.payload
 
+        queueUserId = await currentUserId()
         const existing = pendingUpdates.get(entryId) || {}
         pendingUpdates.set(entryId, {
           ...existing,

@@ -122,7 +122,8 @@ export const SettingsTab: React.FC = () => {
     markAnimeDirty,
     markStatsDirty,
     markMangaDirty,
-    markMangaStatsDirty
+    markMangaStatsDirty,
+    markAllRescaled
   } = useAniListData()
 
   const { logout } = useAuth()
@@ -167,11 +168,15 @@ export const SettingsTab: React.FC = () => {
     try {
       await updateScoreFormat({ variables: { scoreFormat: format } })
 
-      // Unlike adult content, this genuinely invalidates: scores come back rescaled
+      // Unlike adult content, this genuinely invalidates: scores come back rescaled.
+      // Flagged as a rescale too — until the refetch lands the cached scores aren't
+      // slightly stale, they're on the wrong scale, so each tab waits rather than
+      // showing an 8 under POINT_100.
       markAnimeDirty()
       markStatsDirty()
       markMangaDirty()
       markMangaStatsDirty()
+      markAllRescaled()
     } catch (error) {
       console.error('Failed to update score format:', error)
     }

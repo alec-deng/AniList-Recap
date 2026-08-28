@@ -69,6 +69,7 @@ const useListState = (type: MediaListConfig["type"]) => {
     ? {
         list: data.animeList,
         dirty: data.animeDirty,
+        rescaled: data.animeRescaled,
         setList: data.setAnimeList,
         clearDirty: data.clearAnimeDirty,
         markStatsDirty: data.markStatsDirty
@@ -76,6 +77,7 @@ const useListState = (type: MediaListConfig["type"]) => {
     : {
         list: data.mangaList,
         dirty: data.mangaDirty,
+        rescaled: data.mangaRescaled,
         setList: data.setMangaList,
         clearDirty: data.clearMangaDirty,
         markStatsDirty: data.markMangaStatsDirty
@@ -132,7 +134,7 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     gridColumns
   } = useSettings()
 
-  const { list, dirty, setList, clearDirty, markStatsDirty } = useListState(config.type)
+  const { list, dirty, rescaled, setList, clearDirty, markStatsDirty } = useListState(config.type)
 
   const { userId, loading: userIdLoading } = useUserId()
 
@@ -505,7 +507,10 @@ export const MediaListTab: React.FC<{ config: MediaListConfig }> = ({ config }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (userIdLoading || loading)
+  // A rescale counts as loading: useQuery's own flag stays false through a refetch,
+  // and every cached score is on the old scale until it lands. A list dirtied for any
+  // other reason stays on screen and corrects itself in place.
+  if (userIdLoading || loading || rescaled)
     return <StateMessage icon={Loader2} spin message={config.loadingMessage} />
   if (error)
     return (
